@@ -2,8 +2,13 @@
 #include <eosio/asset.hpp>
 #include <atomicassets-interface.hpp>
 
+#include <checkformat.hpp>
+#include <atomicdata.hpp>
+
 
 using namespace eosio;
+using namespace std;
+using namespace atomicdata;
 
 class [[eosio::contract]] ups : public contract {
   
@@ -12,55 +17,72 @@ public:
 
 
 
-struct nft {
-  vector<double> geoloc; //CHECK this should accomadate changes, be optional with 0.0, but that would defeat the geo point
-  string nationiso3;   //DEFAULT VALUE XXX + CXC
-  uint64_t templateid;
-  bool istemplate; // 
+struct content_provider {
+  name provider_hemi;
+  string domain_tld;
+  uint64_t tetra_loc;
+
+  uint64_t primary_key() const { return provider_hemi.value; }
 };
+
+typedef singleton<name("content_provider"), content_provider> content_provider_sing;
+
+// --- SCOPED to name provider_hemi --- //
+TABLE content_table {
+  name content_hemi;
+  string domain_tld;
+  name submitter;
+  vector<double> geoloc;
+  uint64_t tetraloc;
+
+  vector<string> link;
+  uint64_t primary_key() const { return content_hemi.value; }
+  uint64_t by_submitter() const { return submitter; }
+  uint64_t by_index() const { return index; }
+  uint64_t by_tetraloc() const { return tetraloc; }
+};
+
+using content_table_index = multi_index<name("content"), content_table,
+  indexed_by<"byauthor"_n, const_mem_fun<content_table, uint64_t, &content_table::by_author>>,
+  indexed_by<"byindex"_n, const_mem_fun<content_table, uint64_t, &content_table::by_index>>,
+  indexed_by<"bygeoloc"_n, const_mem_fun<content_table, uint64_t, &content_table::by_geoloc>>,
+  indexed_by<"bytetraloc"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc>>,
+  indexed_by<"bylink"_n, const_mem_fun<content_table, uint64_t, &content_table::by_link>>
+  >;
 
 
 private:  
   TABLE upslog { 
     uint64_t upid; 
-    uint64_t nftid;
+    uint64_t content_id;
     uint32_t totalups; 
     uint32_t tuid;
   
     uint64_t primary_key() const { return upid; }
-    uint64_t by_nftid() const { return nftid; }
+    uint64_t by_content_id() const { return content_id; }
     uint64_t by_ups() const { return (uint64_t) totalups; }
 
     uint64_t by_tuid() const { return (uint64_t) tuid; }
   };
   
   using upslog_table = multi_index<name("upslog"), upslog,
-    eosio::indexed_by<"bynftid"_n, eosio::const_mem_fun<upslog, uint64_t, &upslog::by_nftid>>,
+    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<upslog, uint64_t, &upslog::by_content_id>>,
     eosio::indexed_by<"byups"_n, eosio::const_mem_fun<upslog, uint64_t, &upslog::by_ups>>,
     eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<upslog, uint64_t, &upslog::by_tuid>>
   >;
   
   TABLE totals {
-    uint64_t nftid;
+    uint64_t content_id;
     uint32_t totalups; 
     uint32_t updated;
     
-    uint64_t primary_key() const { return nftid; }
+    uint64_t primary_key() const { return content_id; }
   };
   
   using totals_table = multi_index<name("totals"), totals>;
   
-  // --- Connects cXc.world's DB to chain with nftid, maintains NFT list for other dapps --- //
-  TABLE nfts { 
-    uint64_t nftid;
-    name artistacc;
-    uint8_t artisttype;
-    nft nft;
-        
-    uint64_t primary_key() const { return (uint64_t) nftid; }
-  };
   
-  using nfts_table = multi_index<name("nfts"), nfts>;
+
   
   // --- Activity stats for uppers (For future awards) --- //
   TABLE uppers {
@@ -72,6 +94,16 @@ private:
   };
   
     using uppers_table = multi_index<name("uppers"), uppers>;
+
+
+
+  TABLE schemas_s {
+      name schema_name;
+      vector <FORMAT> format;
+
+      uint64_t primary_key() const { return schema_name.value; }
+  };
+
   
   // --- Store record of who to pay --- // 
   // CHECK (in .cpp) that we are paying both the upsender + upcatcher
@@ -113,27 +145,31 @@ private:
   using cxclog_table = multi_index<name("internallog"), internallog>;
 
   TABLE config {
-      name token_contract = name("moneda.puma");
-      symbol token_symbol = symbol(symbol_code("PUMA"), 8);
+      name vote_token_contract = name("bluxbluxblux");
+      symbol vote_token_symbol = symbol(symbol_code("BLUX"), 0);
+      name reward_token_contract = name("purplepurple");
+      symbol reward_token_symbol = symbol(symbol_code("PURPLE"), 8);
       uint32_t timeunit = 300;
-      uint32_t tupay = 1000;
+      asset one_vote_amount;
+      asset one_reward_amount;
   };
 
+  typedef singleton<name("config"), config> config_t;
+
   
-  void updateup(uint32_t upscount, uint8_t upstype, name upsender, uint64_t nftid); //DISPATCHER
-  void logup(uint32_t upscount, uint8_t upstype, name upsender, uint64_t nftid); 
+  void updateup(uint32_t upscount, uint8_t upstype, name upsender, uint64_t content_id); //DISPATCHER
+  void logup(uint32_t upscount, uint8_t upstype, name upsender, uint64_t content_id); 
   void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user
   void updatelisten(uint32_t upscount, uint8_t upstype, name upsender);
   void removelisten(name upsender);
-  void removenft(uint64_t nftid); // Removes all IOUs for nft + nft record (minimal)
-  void deepremvnft(uint64_t nftid); // Removes all records of Ups for this sond
+  void removecont(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
+  void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content
   //MOVED to upsert in helpups.cpp // void updateartistgroup(string groupname, name intgroupname, vector<string> artists, vector<int8_t> weights);
   
   
   // --- Declare the _tables for later use --- // 
   ious_table _ious;
   upslog_table _upslog;
-  nfts_table _nfts;
   uppers_table _uppers;
   totals_table _totals;
   cxclog_table _internallog;
@@ -150,5 +186,11 @@ public:
   
   ACTION payup(name upsender); // User's call to pay themselves
   
-  ACTION updatenft(uint64_t nftid, nft danft); 
+  ACTION updatecont(uint64_t content_id, nft danft); 
+
+// === Contract Utilities === //
+
+
+
+
 };
