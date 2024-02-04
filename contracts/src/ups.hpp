@@ -28,15 +28,15 @@ typedef singleton<name("content_provider"), content_provider> content_provider_s
 // --- SCOPED to name domain --- //
 TABLE content_table {
   uint64_t id;
-  name domain_tld;
+  name domain;
   name submitter;
   string link;
   checksum256 gudahash;
-  vector<double> latlng(1, [0.0,0.0]);
-  vector<uint32_t> tetra_loc(0,0,0,0);
+  vector<double> latlng({0.0,0.0});
+  vector<uint32_t> tetra_loc({0,0,0,0});
 
   uint64_t primary_key() const { return id; }
-  uint64_t by_domain() const { return domain_tld.value; }
+  uint64_t by_domain() const { return domain.value; }
   uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
   uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
   uint64_t by_tetraloc3() const { return static_cast<uint64_t>(tetra_loc[2]); }
@@ -87,8 +87,6 @@ private:
   using totals_table = multi_index<name("totals"), totals>;
   
   
-
-  
   // --- Activity stats for uppers (For future awards) --- //
   TABLE uppers {
     name upsender;
@@ -136,7 +134,6 @@ private:
     eosio::indexed_by<"byupdated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_updated>>
   >;
 
-  
   
   
   TABLE internallog { // track Macro statistics for each token 
@@ -187,11 +184,17 @@ public:
   [[eosio::on_notify("*::transfer")]] // CHECK REQUIRES correct contract for SOL/BLUX Listens for any token transfer
   void up_catch( const name from, const name to, const asset quantity, const std::string memo );
   
-  ACTION payup(void); // Default call
+  ACTION payup(name upsender = false); // User's call to pay themselves
   
-  ACTION payup(name upsender); // User's call to pay themselves
-  
-  ACTION updatecont(uint64_t content_id, nft danft); 
+  ACTION updatecont(uint64_t content_id);
+
+  ACTION regdomain(const name& submitter, const string& url);
+
+  ACTION regnftcol(const name& submitter, const name& nft_collection);
+
+  ACTION addnftcol(const uint64_t provider_id, const name& submitter, const name& nft_collection);
+
+  ACTION addurl(const uint64_t provider_id, const name& submitter, const string& url);
 
 // === Contract Utilities === //
 
