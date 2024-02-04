@@ -1,4 +1,4 @@
-#include "eosio/eosio.hpp"
+#include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
 #include <atomicassets-interface.hpp>
 
@@ -15,41 +15,46 @@ class [[eosio::contract]] ups : public contract {
 using contract::contract;
 public: 
 
-
-
 struct content_provider {
-  name provider_hemi;
-  string domain_tld;
-  uint64_t tetra_loc;
+  name domain;
+  string raw_domain;
+  vector<uint32_t> tetra_loc;
 
-  uint64_t primary_key() const { return provider_hemi.value; }
+  uint64_t primary_key() const { return domain.value; }
 };
 
 typedef singleton<name("content_provider"), content_provider> content_provider_sing;
 
-// --- SCOPED to name provider_hemi --- //
+// --- SCOPED to name domain --- //
 TABLE content_table {
-  name content_hemi;
-  string domain_tld;
+  uint64_t id;
+  name domain_tld;
   name submitter;
-  vector<double> geoloc;
-  uint64_t tetraloc;
+  string link;
+  checksum256 gudahash;
+  vector<double> latlng(1, [0.0,0.0]);
+  vector<uint32_t> tetra_loc(0,0,0,0);
 
-  vector<string> link;
-  uint64_t primary_key() const { return content_hemi.value; }
-  uint64_t by_submitter() const { return submitter; }
-  uint64_t by_index() const { return index; }
-  uint64_t by_tetraloc() const { return tetraloc; }
+  uint64_t primary_key() const { return id; }
+  uint64_t by_domain() const { return domain_tld.value; }
+  uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
+  uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
+  uint64_t by_tetraloc3() const { return static_cast<uint64_t>(tetra_loc[2]); }
+  uint64_t by_tetraloc4() const { return static_cast<uint64_t>(tetra_loc[3]); }
+  uint64_t by_tetraloc12() const { return (static_cast<uint64_t>(tetra_loc[0]) << 32) | tetra_loc[1]; } // Combines the first two parts
+  uint64_t by_tetraloc34() const { return (static_cast<uint64_t>(tetra_loc[2]) << 32) | tetra_loc[3]; } // Combines the last two parts
+
 };
 
 using content_table_index = multi_index<name("content"), content_table,
-  indexed_by<"byauthor"_n, const_mem_fun<content_table, uint64_t, &content_table::by_author>>,
-  indexed_by<"byindex"_n, const_mem_fun<content_table, uint64_t, &content_table::by_index>>,
-  indexed_by<"bygeoloc"_n, const_mem_fun<content_table, uint64_t, &content_table::by_geoloc>>,
-  indexed_by<"bytetraloc"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc>>,
-  indexed_by<"bylink"_n, const_mem_fun<content_table, uint64_t, &content_table::by_link>>
-  >;
-
+  indexed_by<"bydomain"_n, const_mem_fun<content_table, uint64_t, &content_table::by_domain>>,
+  indexed_by<"bytetra1"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc1>>,
+  indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>,
+  indexed_by<"bytetra3"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc3>>,
+  indexed_by<"bytetra4"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc4>>,
+  indexed_by<"bytetra12"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc12>>,
+  indexed_by<"bytetra34"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc34>>
+>;
 
 private:  
   TABLE upslog { 
@@ -190,7 +195,52 @@ public:
 
 // === Contract Utilities === //
 
+name parse_url(const string& url) const {
+    // Find the start position after "://"
+    auto start = url.find("://");
+    if (start != string::npos) {
+        start += 3; // Move past "://"
+    } else {
+        start = 0; // If "://" not found, start from the beginning
+    }
 
+    // Check if "www." is present after "://"
+    auto www = url.find("www.", start);
+    if (www == start) {
+        start += 4; // Move past "www."
+    }
 
+    // Extract the domain part after "://" and "www."
+    string domain_part = url.substr(start);
+
+    // Find the first slash after the domain part to ensure only the domain is included
+    auto end = domain_part.find('/');
+    if (end != string::npos) {
+        domain_part = domain_part.substr(0, end);
+    }
+
+    // Replace invalid characters with a deterministic mapping to letters starting with 'a'
+    for (auto& c : domain_part) {
+        check (static_cast<unsigned char>(c) > 127, "⚡️ Invalid domain name. Must be ASCII characters only.");
+            // Make uppercase letters lowercase
+        if (c >= 'A' && c <= 'Z') {
+            c = c - 'A' + 'a';
+        }
+
+        if ((c < 'a' || c > 'z') && (c < '1' || c > '5') && c != '.') {
+            if (c >= '6' && c <= '9') {
+                // Map '6'-'9' directly to 'a'-'d'
+                c = 'a' + (c - '6');
+            } else {
+                // Map other invalid characters to letters starting with 'e'
+                unsigned char illegalCharValue = static_cast<unsigned char>(c) % 20; // Using modulo to spread the mapping
+                c = 'e' + (illegalCharValue % (122 - 'e')); // Ensure mapping is within 'e'-'z'
+            }
+        }
+    }
+
+    // Convert the domain part to a name type
+    return name(domain_part);
+}
 
 };
