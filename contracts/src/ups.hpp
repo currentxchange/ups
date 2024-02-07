@@ -25,7 +25,12 @@ struct content_provider {
 
 typedef singleton<name("content_provider"), content_provider> content_provider_sing;
 
-// --- SCOPED to name domain --- //
+/*/ --- SCOPED to name domain --- //
+Tetra_loc contains numeric codes for the Continent_Subregions, counrty, state, and postal code (if applicable)
+Indexes allow for efficient individual of content by location
+Fucntions allow to check for the 
+/*/
+
 TABLE content_table {
   uint64_t id;
   name domain;
@@ -41,8 +46,8 @@ TABLE content_table {
   uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
   uint64_t by_tetraloc3() const { return static_cast<uint64_t>(tetra_loc[2]); }
   uint64_t by_tetraloc4() const { return static_cast<uint64_t>(tetra_loc[3]); }
-  uint64_t by_tetraloc12() const { return (static_cast<uint64_t>(tetra_loc[0]) << 32) | tetra_loc[1]; } // Combines the first two parts
-  uint64_t by_tetraloc34() const { return (static_cast<uint64_t>(tetra_loc[2]) << 32) | tetra_loc[3]; } // Combines the last two parts
+  uint64_t by_tetraloc12() const { return (static_cast<uint64_t>(tetra_loc[0]) << 32) | tetra_loc[1]; } 
+  uint64_t by_tetraloc34() const { return (static_cast<uint64_t>(tetra_loc[2]) << 32) | tetra_loc[3]; } 
 
 };
 
@@ -115,7 +120,6 @@ private:
     name upsender;
     name upcatcher;
     uint32_t upscount; // Should be either BIGSOL or sol up or both
-    uint8_t upstype;
     uint32_t initiated;
     uint32_t updated; 
     uint64_t primary_key() const { return iouid; }
@@ -147,27 +151,27 @@ private:
   using cxclog_table = multi_index<name("internallog"), internallog>;
 
   TABLE config {
-      name vote_token_contract = name("bluxbluxblux");
-      symbol vote_token_symbol = symbol(symbol_code("BLUX"), 0);
-      name reward_token_contract = name("purplepurple");
-      symbol reward_token_symbol = symbol(symbol_code("PURPLE"), 8);
-      uint32_t timeunit = 300;
-      asset one_vote_amount;
+      name up_token_contract;
+      symbol up_token_symbol;
+      name reward_token_contract;
+      symbol reward_token_symbol;
+      asset one_up_amount;
       asset one_reward_amount;
+      uint32_t timeunit;
+      bool paused_rewards;
+      bool paused_ups;
   };
 
   typedef singleton<name("config"), config> config_t;
 
   
-  void updateup(uint32_t upscount, uint8_t upstype, name upsender, uint64_t content_id); //DISPATCHER
-  void logup(uint32_t upscount, uint8_t upstype, name upsender, uint64_t content_id); 
+  void updateup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
+  void logup(uint32_t upscount name upsender, uint64_t content_id); 
   void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user
-  void updatelisten(uint32_t upscount, uint8_t upstype, name upsender);
+  void updatelisten(uint32_t upscount name upsender);
   void removelisten(name upsender);
   void removecont(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
-  void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content
-  //MOVED to upsert in helpups.cpp // void updateartistgroup(string groupname, name intgroupname, vector<string> artists, vector<int8_t> weights);
-  
+  void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
   
   // --- Declare the _tables for later use --- // 
   ious_table _ious;
@@ -190,11 +194,17 @@ public:
 
   ACTION regdomain(const name& submitter, const string& url);
 
+  ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
+
   ACTION regnftcol(const name& submitter, const name& nft_collection);
 
   ACTION addnftcol(const uint64_t provider_id, const name& submitter, const name& nft_collection);
 
   ACTION addurl(const uint64_t provider_id, const name& submitter, const string& url);
+
+  ACTION pauserewards(bool pause);
+
+  ACTION pauseups(bool pause);
 
 // === Contract Utilities === //
 
