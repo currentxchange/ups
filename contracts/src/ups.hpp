@@ -18,7 +18,7 @@ public:
 struct content_provider {
   name domain;
   string raw_domain;
-  vector<uint32_t> tetra_loc;
+  vector<uint32_t> tetra_loc; //WARN may change to make this separate Continent Subregion and Nation values, and ignote the more local values for now
 
   uint64_t primary_key() const { return domain.value; }
 };
@@ -26,8 +26,9 @@ struct content_provider {
 typedef singleton<name("content_provider"), content_provider> content_provider_sing;
 
 /*/ --- SCOPED to name domain --- //
-Tetra_loc contains numeric codes for the Continent_Subregions, counrty, state, and postal code (if applicable)
-Indexes allow for efficient individual of content by location
+Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by nation, .hpp in development), and postal code (if applicable, also in development)
+Indexes allow for efficient individual curation of content by location
+So, you can find the top content tagges for 
 Fucntions allow to check for the 
 /*/
 
@@ -162,7 +163,8 @@ private:
       bool paused_ups;
   };
 
-  typedef singleton<name("config"), config> config_t;
+  // --- Declare Config Singleton --- //
+  typedef singleton<name("config"), config> config_table;
 
   
   void updateup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
@@ -180,8 +182,8 @@ private:
   totals_table _totals;
   cxclog_table _internallog;
 
-  // --- Declare Config Singleton --- //
-  typedef singleton<name("config"), config> config_t;
+
+
   
 public:
   
@@ -252,8 +254,26 @@ name parse_url(const string& url) const {
         }
     }
 
-    // Convert the domain part to a name type
+    // --- Return the domain part as a name --- //
     return name(domain_part);
 }
+
+    // --- Gets config object and ensures contract not paused --- //
+    config check_config()
+    {
+        // get config table
+        config_table conf_tbl(get_self(), get_self().value);
+
+        // --- Ensure the rewards are set up --- //
+        check(conf_tbl.exists(), "⚡️ An administrator needs to set up this contract before you can use it.");
+
+        // get  current config
+        const auto& conf = conf_tbl.get();
+
+        // --- If both rewards and ups are paused, no go --- //
+        check(!(conf.paused_rewards && !conf.paused_ups) , "⚡️ Rewards and Ups are both currently frozen. Check back later.");
+
+        return conf;
+    }
 
 };
