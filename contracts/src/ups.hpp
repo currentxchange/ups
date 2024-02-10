@@ -47,8 +47,6 @@ TABLE content_table {
   uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
   uint64_t by_tetraloc3() const { return static_cast<uint64_t>(tetra_loc[2]); }
   uint64_t by_tetraloc4() const { return static_cast<uint64_t>(tetra_loc[3]); }
-  uint64_t by_tetraloc12() const { return (static_cast<uint64_t>(tetra_loc[0]) << 32) | tetra_loc[1]; } 
-  uint64_t by_tetraloc34() const { return (static_cast<uint64_t>(tetra_loc[2]) << 32) | tetra_loc[3]; } 
 
 };
 
@@ -58,8 +56,6 @@ using content_table_index = multi_index<name("content"), content_table,
   indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>,
   indexed_by<"bytetra3"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc3>>,
   indexed_by<"bytetra4"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc4>>,
-  indexed_by<"bytetra12"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc12>>,
-  indexed_by<"bytetra34"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc34>>
 >;
 
 private:  
@@ -144,12 +140,11 @@ private:
   TABLE internallog { // track Macro statistics for each token 
     uint32_t lastpay; // Last time the payment was called for all 
     uint32_t lastfullpay; // All accounts sent BLUX 
-    bool remaining; // Did we reach the end of who is owed to pay? 
     
     uint64_t primary_key() const { return (uint64_t) lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
   };
   
-  using cxclog_table = multi_index<name("internallog"), internallog>;
+  using internallog_table = multi_index<name("internallog"), internallog>;
 
   TABLE config {
       name up_token_contract;
@@ -170,8 +165,8 @@ private:
   void upsertup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
   void logup(uint32_t upscount name upsender, uint64_t content_id); 
   void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user
-  void updatelisten(uint32_t upscount name upsender);
-  void removelisten(name upsender);
+  void updateupper(uint32_t upscount name upsender);
+  void removeupper(name upsender);
   void removecont(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
   void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
   
@@ -180,7 +175,7 @@ private:
   ups_table _ups;
   uppers_table _uppers;
   totals_table _totals;
-  cxclog_table _internallog;
+  internallog_table _internallog;
 
 
 
