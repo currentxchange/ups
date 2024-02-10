@@ -63,7 +63,7 @@ using content_table_index = multi_index<name("content"), content_table,
 >;
 
 private:  
-  TABLE upslog { 
+  TABLE ups { 
     uint64_t upid; 
     uint64_t content_id;
     uint32_t totalups; 
@@ -76,10 +76,10 @@ private:
     uint64_t by_tuid() const { return (uint64_t) tuid; }
   };
   
-  using upslog_table = multi_index<name("upslog"), upslog,
-    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<upslog, uint64_t, &upslog::by_content_id>>,
-    eosio::indexed_by<"byups"_n, eosio::const_mem_fun<upslog, uint64_t, &upslog::by_ups>>,
-    eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<upslog, uint64_t, &upslog::by_tuid>>
+  using ups_table = multi_index<name("ups"), ups,
+    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ups, uint64_t, &ups::by_content_id>>,
+    eosio::indexed_by<"byups"_n, eosio::const_mem_fun<ups, uint64_t, &ups::by_ups>>,
+    eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ups, uint64_t, &ups::by_tuid>>
   >;
   
   TABLE totals {
@@ -167,7 +167,7 @@ private:
   typedef singleton<name("config"), config> config_table;
 
   
-  void updateup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
+  void upsertup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
   void logup(uint32_t upscount name upsender, uint64_t content_id); 
   void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user
   void updatelisten(uint32_t upscount name upsender);
@@ -177,7 +177,7 @@ private:
   
   // --- Declare the _tables for later use --- // 
   ious_table _ious;
-  upslog_table _upslog;
+  ups_table _ups;
   uppers_table _uppers;
   totals_table _totals;
   cxclog_table _internallog;
