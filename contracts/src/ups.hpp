@@ -176,7 +176,7 @@ private:
   uppers_table _uppers;
   totals_table _totals;
   internallog_table _internallog;
-
+  content_table _content;
 
 
   
