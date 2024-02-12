@@ -13,7 +13,6 @@ enum class Continents {
     SOUTH_AMERICA
 };
 
-
 enum class Regions_M49 {
     AFRICA,
     AMERICAS,
