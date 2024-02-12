@@ -113,22 +113,22 @@ void upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id, bool
 }//END upsert_total()
 
 
-void ups::removeiou(name sender, name receiver) {
+void removeiou(name sender, name receiver) {
     
 }
 
-void ups::upsertupper(uint32_t upscount, name upsender) {
+void upsertupper(uint32_t upscount, name upsender) {
     
 }
 
-void ups::removeupper(name upsender) {
+void removeupper(name upsender) {
     
 }
 
-void ups::removecont(uint64_t content_id) {
+void removecont(uint64_t content_id) {
     
 }
 
-void ups::deepremvcont(uint64_t content_id) {
+void deepremvcont(uint64_t content_id) {
     
 }

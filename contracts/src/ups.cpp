@@ -22,7 +22,10 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection) {
 }
 
 ACTION ups::addnftcol(const uint64_t provider_id, const name& submitter, const name& nft_collection) {
+    // --- Check if collection exists + use is authorized  --- //
     
+
+
 }
 
 ACTION ups::addurl(const uint64_t provider_id, const name& submitter, const string& url) {
@@ -75,6 +78,9 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     // --- Ensure the action is authorized by the contract itself --- //
     check(require_auth(get_self()), "Only contract owner can set the config"); 
 
+    // --- Other checks --- //
+    check ((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
+
     // --- Access the config singleton --- //
     config_table _config(get_self(), get_self().value); 
 
@@ -89,8 +95,8 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     new_conf.one_up_amount = one_up_amount;
     new_conf.one_reward_amount = one_reward_amount;
     new_conf.timeunit = timeunit;
-    new_conf.paused_rewards = false; // Default to not paused
-    new_conf.paused_ups = false; // Default to not paused
+    new_conf.paused_rewards = false; // --- Defaults to not be paused
+    new_conf.paused_ups = false;
 
     // --- Set the new config in the singleton --- //
     _config.set(new_conf, get_self()); 
@@ -102,19 +108,46 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 // --- Receive Tokenized Ups --- //
 [[eosio::on_notify("*::transfer")]] void ups::_catch( const name from, const name to, const asset quantity, const string memo )
 {  
-  // --- Check that we're the intended recipient --- // 
-  if (to != _self) return; 
+
+    if (from == _self) return;
+
     name content_name;
 
-  content_name = name(memo); 
-  if(!content_name){ // Not a NFT
-    // ---  --- //
-  } else {
+    // --- Check for '|' in memo --- //
+    size_t delimiter_pos = memo.find('|');
+    if (delimiter_pos != string::npos) {
+        // --- Split memo into function name and parameter
+        string memo_man = memo.substr(0, delimiter_pos);
+        string parameter = memo.substr(delimiter_pos + 1);
+        name content_name;
 
-  }
+        // --- Call the function based on memo_man --- //
+        if (memo_man == "up") {
+            if(parameter.size() <= 12){// --- Its a name
+                upsertup(up_quantity, from, Name.from(parameter), 0);
+            } else {// --- It's a URL
+                    name content_name = parse_url(parameter)
+            }
+            
+        } else if (memo_man == "reg") {
+            func2(parameter);
+            return;
+        } else if (memo_man == "url") {
+            func3(parameter);
+            return;
+        } else if (memo_man == "url") {
+            func3(parameter);
+            return;/
+        } else {
+            // Handle unknown memo
+            check (0, "Unknown memo, send contentid or the url with up|url", memo_man);
+        }
+        return; //---- Return after handling
+    }
 
-  require_auth(get_self());
+    // --- If '|' is not found in memo, treat the entire memo as a name
 
+    check(memo.size() <= 12, "Please send Up with an contentid or register this content. reg|url")
   // --- Token-symbol Check --- //
   check(quantity.symbol.is_valid(), "Invalid token symbol");
   check(quantity.amount > 0, "Quantity must be positive");
@@ -123,16 +156,19 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
   _content ups(_self, _self.value);
 
   // --- Check for content in table --- // 
-  auto itr = ups.find(contentid_upped);
-  check(itr != ups.end(), "Content ID does not exist");
+  auto itr = ups.find(content_name);
+  check(itr != ups.end(), "Content ID does not exist. Add it first.");
 
   // --- Set up Variables --- //
-  uint32_t up_quantity = static_cast<uint32_t>(quantity.amount); 
+  config conf = check_config()
+  check(!conf.paused_ups, "Ups are currently paused.");
+  check(get_first_receiver() == conf.up_token_contract, "Transfer does not come from the expected Up token contract.");
+
+  uint32_t up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount); 
   
-  // --- Pass on to updateup() to register in table --- //
-  updateup(up_quantity, from, contentid_upped, 0);
+  // --- Pass on to upsertup() to register in table --- //
+  upsertup(up_quantity, from, content_name, 0);
   
 } // END listen->SOL ups
 
-// Assuming the existence of updateup and up_table definitions elsewhere in your code
 
