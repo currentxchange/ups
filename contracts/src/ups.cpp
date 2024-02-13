@@ -74,15 +74,18 @@ ACTION ups::pauseups(bool pause) {
 }
 
 // --- Action to set configuration --- //
-ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, uint32_t timeunit) {
+ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, double reward_multiplier, uint32_t timeunit) {
     // --- Ensure the action is authorized by the contract itself --- //
     check(require_auth(get_self()), "Only contract owner can set the config"); 
 
     // --- Access the config singleton --- //
     config old_conf = check_config(true);
 
-    // --- Other checks --- //
+      // --- Token Checks --- //
+    check(reward_token_symbol.is_valid() && up_token_symbol.is_valid(), "Invalid token symbol");
+    check(one_up_amount.amount > 0 && one_reward_amount.amount > 0, "Quantity must be positive");
     check ((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
+
 
     if (old_conf && old_conf.timeunit != timeunit){
         // --- Can't change time unit after ups have been made as it's used for reward calculations --- //
@@ -99,9 +102,10 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     new_conf.up_token_symbol = up_token_symbol;
     new_conf.reward_token_contract = reward_token_contract;
     new_conf.reward_token_symbol = reward_token_symbol;
-    new_conf.one_up_amount = one_up_amount;
-    new_conf.one_reward_amount = one_reward_amount;
-    new_conf.timeunit = timeunit;
+    new_conf.one_up_amount = one_up_amount; // --- One up and one reward are linked to one unit of time per user
+    new_conf.one_reward_amount = one_reward_amount; // --- Keep this in mind if planning rewards + inflatioon
+    new.conf.reward_multiplier = 1.0; // --- Increase or decrease rewards per time unit without destabalizing relationship. WARN may mean claims get paif current rate without calc of change tim 
+    new_conf.timeunit = timeunit; // This cannot change once  Ups are made. 
     new_conf.paused_rewards = false; // --- Defaults to not be paused
     new_conf.paused_ups = false;
 
@@ -110,21 +114,19 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 }
 
 
-// === Notification Handlers === //
-
-// --- Receive Tokenized Ups --- //
+// --- Receive Tokenized Ups + Put them in Tables --- //
 [[eosio::on_notify("*::transfer")]] void ups::_catch( const name from, const name to, const asset quantity, const string memo )
 {  
 
-    if (from == _self) return;
+    if (from == _self || to != self) return;
     
     // --- Checks + Set up Variables --- //
     config conf = check_config()
     check(!conf.paused_ups, "Ups are currently paused.");
     check(get_first_receiver() == conf.up_token_contract, "This isn't the correct Up token.");
     uint64_t up_quantity 
-    check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ quantity.to_string());
-    check(up_quantity >= 1, "Your Up was too small. Send at least "+ quantity.to_string());
+    check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
+    check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
 
 
     name content_name; // --- To parse URL if needed 
@@ -145,6 +147,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
                 upsertup(up_quantity, from, Name.from(parameter), 0);
             } else {// --- It's a URL
                 content_name = parse_url_for_domain(parameter)
+
             }
             return;
         } else if (memo_man == "reg") {
@@ -157,8 +160,17 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             // --- Check if content is registered in _content --- //
 
         } else if (memo_man == "url") {
+        /*/ --- 
+        
+        Accept a dynamic name that represents a domain
+        youtub20hfbv|https://www.youtube.com/watch?v=dQw4w9Wg
 
-            return;/
+        or a collection and a template 
+        collection|templateid
+
+        /*/// ---
+
+            return;
         } else {
             // Handle unknown memo
             check (0, "Unknown memo, send contentid or the url with up| or url| register/upvote or reg| to register");
@@ -168,9 +180,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     // --- If '|' is not found in memo, treat the entire memo as a name
 
     check(memo.size() <= 12, "Please send Up with an contentid or register this content. reg|url")
-  // --- Token-symbol Check --- //
-  check(quantity.symbol.is_valid(), "Invalid token symbol");
-  check(quantity.amount > 0, "Quantity must be positive");
+
 
   // --- Instantiate Content Table --- //
   _content ups(_self, _self.value);
@@ -184,6 +194,6 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
   // --- Pass on to upsertup() to register in table --- //
   upsertup(up_quantity, from, content_name, 0);
   
-} // END listen->SOL ups
+} // END token transfer listener
 
 
