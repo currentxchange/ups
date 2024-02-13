@@ -135,8 +135,16 @@ void removecont(uint64_t content_id) {
     
 }
 
-void addcontent(name& submitter, string& url) {
-    name domain = parse_url_for_domain(url);
+void addcontent(name& submitter, string& url, name domain = false) {
+    
+    name domain = parse_url(url);
+
+    // --- Check if Name is in providers table --- //
+    require_auth(submitter);
+
+
+    
+
 
     // dont forget :       row.id = _ups.available_primary_key();
 }
@@ -166,14 +174,15 @@ uint32_t iouid_to_contentid(uint32_t& iouid){ //
   return content_id;
 }
 
-// --- Get Tuid from iouif (concat of tuid + content_id) --- //
+// --- Get Tuid from iouid (concat of tuid + content_id) --- //
 uint32_t iouid_to_tuid(uint32_t& iouid){
   uint32_t tuid = (uint32_t iouid>>32);
   return tuid;
 }
 
+// --- Returns Name from Domain or url checksum256 if whole thang --- //
 
-name parse_url_for_domain(const string& url) const {
+auto parse_url(const string& url, bool whole_thang = false) const { 
     // Find the start position after "://"
     auto start = url.find("://");
     if (start != string::npos) {
@@ -188,13 +197,19 @@ name parse_url_for_domain(const string& url) const {
         start += 4; // Move past "www."
     }
 
-    // Extract the domain part after "://" and "www."
-    string domain_part = url.substr(start);
+    //  --- Extract the domain part after "://" and "www." --- //
+    string domain_part;
+    string domain_main = url.substr(start);
 
-    // Find the first slash after the domain part to ensure only the domain is included
-    auto end = domain_part.find('/');
+    // --- Stop at the slash --- // 
+    auto end = domain_main.find('/');
     if (end != string::npos) {
-        domain_part = domain_part.substr(0, end);
+        domain_part = domain_main.substr(0, end);
+    }
+
+    // --- If hash is needed return hash + done --- //
+    if (whole_thang) {
+        return sha256(domain_main, domain_main.size());
     }
 
     // Replace invalid characters with a deterministic mapping to letters starting with 'a'
@@ -219,7 +234,7 @@ name parse_url_for_domain(const string& url) const {
 
     // --- Return the domain part as a name --- //
     return name(domain_part);
-}
+}//END parse_url()
 
 // --- Gets config object and ensures contract not paused --- //
 auto check_config(bool ignore_empty = false) // --- RETURNS false or config type
@@ -244,4 +259,19 @@ auto check_config(bool ignore_empty = false) // --- RETURNS false or config type
     } else return false; // --- Returns only when ignore empty is set to avoid check. 
 }
 
-};
+// --- Check if user is authorized on NFT collection --- //
+bool isAuthorized(name collection, name user)
+    {
+        auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
+        bool authorized = false;
+        vector<name> authAccounts = itrCollection->authorized_accounts;
+        for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++)
+        {
+        if (user == name(*it))
+        {
+            authorized = true;
+            break;
+        }
+        }
+        return authorized;
+    }//END isAuthorized()
