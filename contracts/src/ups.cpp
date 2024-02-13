@@ -21,14 +21,14 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection) {
     
 }
 
-ACTION ups::addnftcol(const uint64_t provider_id, const name& submitter, const name& nft_collection) {
+ACTION ups::addnftcol(const name domain, const name& submitter, const name& nft_collection) {
     // --- Check if collection exists + use is authorized  --- //
     
 
 
 }
 
-ACTION ups::addurl(const uint64_t provider_id, const name& submitter, const string& url) {
+ACTION ups::addurl(const name domain, const name& submitter, const string& url) {
     
 }
 
@@ -78,11 +78,18 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     // --- Ensure the action is authorized by the contract itself --- //
     check(require_auth(get_self()), "Only contract owner can set the config"); 
 
+    // --- Access the config singleton --- //
+    config old_conf = check_config(true);
+
     // --- Other checks --- //
     check ((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
 
-    // --- Access the config singleton --- //
-    config_table _config(get_self(), get_self().value); 
+    if (old_conf && old_conf.timeunit != timeunit){
+        // --- Can't change time unit after ups have been made as it's used for reward calculations --- //
+        _ups(get_self(), self().value);
+        bool dundidit = (_ups.begin() != _ups.end());
+        check (!dundidit, "You cannot adjust the timeunit after Ups have been made. Whoops.")
+    }
 
     // --- Create new config object --- //
     config new_conf;
@@ -110,8 +117,18 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 {  
 
     if (from == _self) return;
+    
+    // --- Checks + Set up Variables --- //
+    config conf = check_config()
+    check(!conf.paused_ups, "Ups are currently paused.");
+    check(get_first_receiver() == conf.up_token_contract, "This isn't the correct Up token.");
+    uint64_t up_quantity 
+    check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ quantity.to_string());
+    check(up_quantity >= 1, "Your Up was too small. Send at least "+ quantity.to_string());
 
-    name content_name;
+
+    name content_name; // --- To parse URL if needed 
+    bool force_reg_content = false;
 
     // --- Check for '|' in memo --- //
     size_t delimiter_pos = memo.find('|');
@@ -119,30 +136,33 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         // --- Split memo into function name and parameter
         string memo_man = memo.substr(0, delimiter_pos);
         string parameter = memo.substr(delimiter_pos + 1);
+        name domain;
         name content_name;
-
+ 
         // --- Call the function based on memo_man --- //
         if (memo_man == "up") {
             if(parameter.size() <= 12){// --- Its a name
                 upsertup(up_quantity, from, Name.from(parameter), 0);
             } else {// --- It's a URL
-                    name content_name = parse_url(parameter)
+                content_name = parse_url_for_domain(parameter)
             }
-            
+            return;
         } else if (memo_man == "reg") {
-            func2(parameter);
+            addcontent(name& submitter, string& url)
+
             return;
         } else if (memo_man == "url") {
-            func3(parameter);
-            return;
+            domain = parse_url_for_domain(parameter);
+
+            // --- Check if content is registered in _content --- //
+
         } else if (memo_man == "url") {
-            func3(parameter);
+
             return;/
         } else {
             // Handle unknown memo
-            check (0, "Unknown memo, send contentid or the url with up|url", memo_man);
+            check (0, "Unknown memo, send contentid or the url with up| or url| register/upvote or reg| to register");
         }
-        return; //---- Return after handling
     }
 
     // --- If '|' is not found in memo, treat the entire memo as a name
@@ -159,12 +179,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
   auto itr = ups.find(content_name);
   check(itr != ups.end(), "Content ID does not exist. Add it first.");
 
-  // --- Set up Variables --- //
-  config conf = check_config()
-  check(!conf.paused_ups, "Ups are currently paused.");
-  check(get_first_receiver() == conf.up_token_contract, "Transfer does not come from the expected Up token contract.");
-
-  uint32_t up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount); 
+ 
   
   // --- Pass on to upsertup() to register in table --- //
   upsertup(up_quantity, from, content_name, 0);

@@ -1,8 +1,10 @@
 /*/
 
-
-
-
+This file handles the dispatch of tokens, etc in a standardized way.
+This allows us to be more flexible with what constitutes an up:
+1) A token transfer with an up| memo
+2) A token stansfer with just a name that's a content ID (no special memo)
+3) An Up action on a contract that has been registered as a "content id"
 
 
 
@@ -12,13 +14,16 @@
 
 // --- DISPATCHER Checks + calls logup() updateiou() and updatetotal() --- //
 void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative) {
-      if (!negative){
-    // --- Log the ups in ups table --- // 
-    upsert_logup(upscount, upsender, content_id, negative);
-    
-    // --- Calls action to update the TOTALS table -- //
-    upsert_total(upscount, upsender, content_id, negative);
-  }
+
+    // --- Check content ID id valid
+
+    if (!negative){
+        // --- Log the ups in ups table --- // 
+        upsert_logup(upscount, upsender, content_id, negative);
+        
+        // --- Calls action to update the TOTALS table -- //
+        upsert_total(upscount, upsender, content_id, negative);
+    }
 }//END upsertup()
 
 
@@ -35,7 +40,7 @@ void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool ne
   if( ups_iterator == _ups.end() )
   { // -- Make New Record
     _ups.emplace(upsender, [&]( auto& row ) {//URGENT This needs to be changed when we figure out the PK issue
-      row.key = content_id;
+      row.upid = _ups.available_primary_key();
       row.totalups = newups;
       row.tuid = momentu;
     });
@@ -127,6 +132,12 @@ void removeupper(name upsender) {
 
 void removecont(uint64_t content_id) {
     
+}
+
+void addcontent(name& submitter, string& url) {
+    name domain = parse_url_for_domain(url);
+
+    // dont forget :       row.id = _ups.available_primary_key();
 }
 
 void deepremvcont(uint64_t content_id) {

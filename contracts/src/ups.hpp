@@ -169,6 +169,7 @@ private:
   void removeupper(name upsender);
   void removecont(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
   void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
+  void addcontent(name& submitter, string& url);
   
   // --- Declare the _tables for later use --- // 
   ious_table _ious;
@@ -195,9 +196,9 @@ public:
 
   ACTION regnftcol(const name& submitter, const name& nft_collection);
 
-  ACTION addnftcol(const uint64_t provider_id, const name& submitter, const name& nft_collection);
+  ACTION addnftcol(const name domain, const name& submitter, const name& nft_collection);
 
-  ACTION addurl(const uint64_t provider_id, const name& submitter, const string& url);
+  ACTION addurl(const name domain, const name& submitter, const string& url); //CHECK if need the domain name
 
   ACTION pauserewards(bool pause);
 
@@ -205,7 +206,7 @@ public:
 
 // === Contract Utilities === //
 
-name parse_url(const string& url) const {
+name parse_url_for_domain(const string& url) const {
     // Find the start position after "://"
     auto start = url.find("://");
     if (start != string::npos) {
@@ -254,15 +255,17 @@ name parse_url(const string& url) const {
 }
 
     // --- Gets config object and ensures contract not paused --- //
-    config check_config()
+    /*/config/*/ auto check_config(bool ignore_empty = false)
     {
         // get config table
         config_table conf_tbl(get_self(), get_self().value);
 
         // --- Ensure the rewards are set up --- //
-        check(conf_tbl.exists(), "⚡️ An administrator needs to set up this contract before you can use it.");
+        check(conf_tbl.exists() || ignore_empty, "⚡️ An administrator needs to set up this contract before you can use it.");
 
-        // get  current config
+
+        // --- Return a blank object or the config object --- //
+        if (ignore_empty){ return false; }
         const auto& conf = conf_tbl.get();
 
         // --- If both rewards and ups are paused, no go --- //
