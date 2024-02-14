@@ -38,9 +38,9 @@ TABLE content_table {
   name submitter;
   string link;
   uint32_t external_id;
-  time_point_sec created;
   checksum256 gudahash;
-  vector<double> latlng({0.0,0.0});
+  time_point_sec created;
+  vector<double> latlng({0.0,0.0});//CHECK I don't think this is how you set default values 
   vector<uint32_t> tetra_loc({0,0,0,0});
 
   uint64_t primary_key() const { return id; } // use this to return the bitshift
