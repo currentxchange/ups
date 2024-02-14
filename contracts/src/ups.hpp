@@ -43,6 +43,7 @@ TABLE content_table {
 
   uint64_t primary_key() const { return id; } // use this to return the bitshift
   uint64_t by_domain() const { return domain.value; }
+  checksum256 by_gudahash() const { return gudahash; }
   uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
   uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
   uint64_t by_tetraloc3() const { return static_cast<uint64_t>(tetra_loc[2]); }

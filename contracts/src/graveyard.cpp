@@ -9,3 +9,12 @@
   };
 
   typedef singleton<name("config"), config> config_t;
+
+
+Decided its fine, anyone can add the collection if they pay for the RAM
+
+    // --- NFT Checks --- //
+    if (collection && templateid){
+      // --- Only collectionowners can register a collection --- //
+        check(isAuthorized(collection, submitter));
+    }
