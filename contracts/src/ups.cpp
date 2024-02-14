@@ -10,7 +10,8 @@ ACTION ups::updatecont(uint64_t content_id) {
 }
 
 ACTION ups::regdomain(const name& submitter, const string& url, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0} ) {
-    require_auth(submitter); 
+
+    check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name as the submitter.")
 
     // ---- Get a name from the URL --- //
     name domain_parsed = parse_url(url);
@@ -36,7 +37,7 @@ ACTION ups::configdomain(const name& submitter, const string& url, const name& u
 
 ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0}) {
     // --- Check if collection exists + user is authorized  --- //
-    check(require_auth(submitter), "The content submitter must sign."); 
+    check(has_auth(submitter), "The content submitter must sign."); 
     auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
 
     // --- Require collection owners to register collection --- //
@@ -61,9 +62,44 @@ ACTION ups::addurl(const name& submitter, const string& url, const name domain =
     
 }
 
+//TODO WARN needs update to remove the up records
+ACTION removecontent(uint32_t content_id = 0, name collection = ""_n, uint32_t template_id = 0) {
+
+    content_table contents(get_self(), get_self().value); // Access the content table
+
+    // If content_id is provided, remove by content_id
+    if (content_id != 0) {
+        auto itr = contents.find(content_id);
+        check(itr != contents.end(), "Content with this ID does not exist.");
+
+        check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter or contract can remove the content.")
+
+        contents.erase(itr); // Remove the content from the table
+    } 
+    // If content_id is not set, use the collection name and template_id
+    else if (collection != ""_n && template_id != 0) {
+        auto by_template = contents.get_index<"byextid"_n>(); 
+        auto temp_itr = by_template.find(((uint64_t) content_id));
+
+        bool found = false;
+        for (; temp_itr != by_template.end(); ++temp_itr) {
+            if (temp_itr->domain == collection) {
+                by_template.erase(temp_itr);
+                found = true;
+                break; 
+            }
+        }
+
+        check(found, "Nothing found for the specified collection and template ID.");
+    } else {
+        check(false, "Either content_id or both collection and template_id must be provided.");
+    }
+}
+
+
 ACTION ups::pauserewards(bool pause) {
     // --- Action must be authorized by the contract itself --- //
-    check(require_auth(get_self()), "Only contract owner can pause the rewards."); 
+    check(has_auth(get_self()), "Only contract owner can pause the rewards."); 
 
     // --- Access the config singleton --- //
     config_table _config(get_self(), get_self().value); 
@@ -84,7 +120,7 @@ ACTION ups::pauserewards(bool pause) {
 
 ACTION ups::pauseups(bool pause) {
     // --- Action must be authorized by the contract itself --- //
-    check(require_auth(get_self()), "Only contract owner can pause the Ups."); 
+    check(has_auth(get_self()), "Only contract owner can pause the Ups."); 
 
     // --- Access the config singleton --- //
     config_table _config(get_self(), get_self().value); 
@@ -105,7 +141,7 @@ ACTION ups::pauseups(bool pause) {
 // --- Action to set configuration --- //
 ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, double reward_multiplier, uint32_t timeunit) {
     // --- Ensure the action is authorized by the contract itself --- //
-    check(require_auth(get_self()), "Only contract owner can set the config"); 
+    check(has_auth(get_self()), "Only contract owner can set the config"); 
 
     // --- Access the config singleton --- //
     config old_conf = check_config(true);
