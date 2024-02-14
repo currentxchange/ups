@@ -23,7 +23,7 @@ struct content_provider {
   uint64_t primary_key() const { return domain.value; }
 };
 
-typedef singleton<name("content_provider"), content_provider> content_provider_table;
+typedef singleton<name("content_provider"), content_provider> content_provider_singleton;
 
 /*/ --- SCOPED to name domain --- //
 Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by nation, .hpp in development), and postal code (if applicable, also in development)

@@ -9,20 +9,32 @@ ACTION ups::updatecont(uint64_t content_id) {
     
 }
 
-ACTION ups::regdomain(const name& submitter, const string& url) {
+ACTION ups::regdomain(const name& submitter, const string& url, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0} ) {
     require_auth(submitter); 
 
-    // ---- Get a name from the URL 
+    // ---- Get a name from the URL --- //
     name domain_parsed = parse_url(url);
+    name domain_chopped = parse_url(url, 0, 0, 1);
 
+    // ---- Check if domain is already registered --- //
+    content_provider_singleton content_prov(get_self(), domain_parsed.value);
+    eosio::check(!content_prov.exists(), "Content provider already registered for this domain");
 
+    // ---- Register new content provider --- //
+    content_provider prov_data;
+    prov_data.domain = domain_parsed;    
+    prov_data.tetra_locode = tetra_locode;
+    prov_data.raw_domain = url;
+
+    // Save the content provider information
+    content_prov.set(prov_data, get_self());
 }
 
 ACTION ups::configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount) {
 // This functionality isn't in this contract, but can be added     
 }
 
-ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const vector<uint32_t>& tetra_locode) {
+ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0}) {
     // --- Check if collection exists + user is authorized  --- //
     check(require_auth(submitter), "The content submitter must sign."); 
     auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
@@ -31,19 +43,18 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const v
     //check(isAuthorized(nft_collection, submitter), "Submitter is not authorized for this collection.");
 
     // --- Check the providers table --- //
-    content_providers_table collections(get_self(), get_self().value);
-    auto itr = collections.find(nft_collection.value);
-    
+    content_provider_singleton content_prov(get_self(), nft_collection.value);
+
     // --- Ensure the collection is not already registered --- //
-    check(itr == collections.end(), "NFT collection is already registered.");
+    check(!content_prov.exists(), "Content provider already registered for this domain");
 
     // --- Register the collection --- //
-    collections.emplace(submitter, [&](auto& row) {
-        row.domain = nft_collection;
-        row.raw_domain = nft_collection.to_string();
-        row.tetra_loc = tetra_locode;
-    });
+    content_provider new_provider
+    new_provider.domain = nft_collection,
+    new_provider.raw_domain = nft_collection.to_string(),
+    new_provider.tetra_loc = tetra_locode
 
+    content_prov.set(new_provider, submitter); // --- Submitter pays to register
 }
 
 ACTION ups::addurl(const name& submitter, const string& url, const name domain = false) {
