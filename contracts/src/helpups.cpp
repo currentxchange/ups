@@ -184,7 +184,7 @@ uint32_t iouid_to_tuid(uint32_t& iouid){
 }
 
 // --- Returns Name from Domain or url checksum256 if whole thang --- //
-auto parse_url(const string& url, bool whole_thang = false) const { 
+auto parse_url(const string& url, bool hash_whole = false, bool chopped_whole = false, bool chopped_domain = false) const { 
     // Find the start position after "://"
     auto start = url.find("://");
     if (start != string::npos) {
@@ -210,8 +210,12 @@ auto parse_url(const string& url, bool whole_thang = false) const {
     }
 
     // --- If hash is needed return hash + done --- //
-    if (whole_thang) {
+    if (hash_whole) {
         return sha256(domain_main, domain_main.size());
+    } else if (chopped_whole){
+      return domain_main;
+    } else if (chopped_domain){
+      return domain_part;
     }
 
     // Replace invalid characters with a deterministic mapping to letters starting with 'a'
