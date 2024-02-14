@@ -183,6 +183,25 @@ void addcontent(name& submitter, vector<double> latlng = {0.0,0.0}, const vector
       auto template_itr = templates_table.find(templateid);
       check(template_itr != templates_table.end(), "Template does not exist");
 
+      // --- Check if NFT already exists in content_table --- //
+      content_table contents(get_self(), get_self().value);
+      auto by_external_id_idx = contents.get_index<"byexternal"_n>(); // Assuming this is the secondary index for external_id
+      auto nft_itr = by_external_id_idx.find(templateid);
+      check(nft_itr == by_external_id_idx.end(), "NFT is already registered. Send Ups.");
+
+      // Insert new NFT content
+      contents.emplace(submitter, [&](auto& row) {
+        row.id = contents.available_primary_key();
+        row.domain = collection; // --- Using collection name as domain for NFTs
+        row.submitter = submitter;
+        row.external_id = templateid; // --- Set external_id to templateid for NFTs
+        row.gudahash = checksum256(); 
+        row.created = current_time_point();
+        row.latlng = latlng;
+        row.tetra_loc = tetra_locode;
+      });
+
+
     } else {
       check(false, "This is not a valid URL or NFT");
     }
