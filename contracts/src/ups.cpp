@@ -10,11 +10,16 @@ ACTION ups::updatecont(uint64_t content_id) {
 }
 
 ACTION ups::regdomain(const name& submitter, const string& url) {
-    
+    require_auth(submitter); 
+
+    // ---- Get a name from the URL 
+    name domain_parsed = parse_url(url);
+
+
 }
 
 ACTION ups::configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount) {
-    
+// This functionality isn't in this contract, but can be added     
 }
 
 ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const vector<uint32_t>& tetra_locode) {

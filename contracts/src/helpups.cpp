@@ -1,10 +1,10 @@
-/*/ ---
+/*/ --- 
 
 This file handles the dispatch of tokens, etc in a standardized way.
 This allows us to be more flexible with what constitutes an up:
 1) A token transfer with an up| memo
 2) A token stansfer with just a name that's a content ID (no special memo)
-3) An Up action on a contract that has been registered as a "content id"
+3) An Up action on a contract that has been registered as a "content id" (no action for this yet)
 
 /*/// ---
 
@@ -26,9 +26,6 @@ void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool n
         ious::updateiou(upscount, upsender, content_id, false);
     }
 }//END upsertup()
-
-
-
 
 // --- Update running log of ups --- // TODO update to this contract
 void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative){
@@ -121,32 +118,38 @@ void upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id, bool
 
 void removeiou(name sender, name receiver) {
     
-}
+}//END removeiou()
 
 void upsertupper(uint32_t upscount, name upsender) {
     
-}
+}//END upsertupper()
 
 void removeupper(name upsender) {
     
-}
+}//END removeupper()
 
-void removecont(uint64_t content_id) {
+void removecontent(uint64_t content_id) {
     
-}
+}//END removecont()
 
-void addcontent(name& submitter, string& url, name domain = false) {
+// --- Handles adding both NFT content and URL content --- //
+void addcontent(name& submitter, string& url, name domain = false, name collection = false, uint32_t templateid = false) { //CHECK need ""_n instead of false?
+
+    // --- Check if submitter is in providers table --- //
+    require_auth(submitter): 
+
+
     
     name domain = parse_url(url);
+    hash url_hash = parse_url(url, 1);
 
-    // --- Check if Name is in providers table --- //
-    require_auth(submitter);
+  // --- Check if content already exists --- //
 
 
     
 
 
-    // dont forget :       row.id = _ups.available_primary_key();
+    // dont forget : row.id = _ups.available_primary_key();
 }
 
 void deepremvcont(uint64_t content_id) {
@@ -169,7 +172,7 @@ uint32_t find_tu(uint32_t tu_length){
 }
 
 // --- Get content_id from iouid (concat of tuid + content_id) --- //
-uint32_t iouid_to_contentid(uint32_t& iouid){ //
+uint32_t iouid_to_contentid(uint32_t& iouid){
   uint32_t content_id = (uint32_t) iouid;
   return content_id;
 }
@@ -181,7 +184,6 @@ uint32_t iouid_to_tuid(uint32_t& iouid){
 }
 
 // --- Returns Name from Domain or url checksum256 if whole thang --- //
-
 auto parse_url(const string& url, bool whole_thang = false) const { 
     // Find the start position after "://"
     auto start = url.find("://");
