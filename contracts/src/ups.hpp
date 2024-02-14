@@ -23,7 +23,7 @@ struct content_provider {
   uint64_t primary_key() const { return domain.value; }
 };
 
-typedef singleton<name("content_provider"), content_provider> content_provider_sing;
+typedef singleton<name("content_provider"), content_provider> content_provider_table;
 
 /*/ --- SCOPED to name domain --- //
 Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by nation, .hpp in development), and postal code (if applicable, also in development)
@@ -169,9 +169,9 @@ private:
   void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user
   void updateupper(uint32_t upscount name upsender);
   void removeupper(name upsender);
-  void removecont(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
+  void removecontent(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
   void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
-  void addcontent(name& submitter, string& url);
+  void addcontent(name& submitter, string& url, name domain = false, name collection = false, uint32_t templateid = false);
   
   // --- Declare the _tables for later use --- // 
   ious_table _ious;
@@ -180,6 +180,7 @@ private:
   totals_table _totals;
   internallog_table _internallog;
   content_table _content;
+
 
 
   
@@ -197,8 +198,6 @@ public:
   ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 
   ACTION regnftcol(const name& submitter, const name& nft_collection);
-
-  ACTION addnftcol(const name domain, const name& submitter, const name& nft_collection);
 
   ACTION addurl(const name domain, const name& submitter, const string& url); //CHECK if need the domain name
 

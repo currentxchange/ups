@@ -17,18 +17,31 @@ ACTION ups::configdomain(const name& submitter, const string& url, const name& u
     
 }
 
-ACTION ups::regnftcol(const name& submitter, const name& nft_collection) {
+ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const vector<uint32_t>& tetra_locode) {
+    // --- Check if collection exists + user is authorized  --- //
+    check(require_auth(submitter), "The content submitter must sign."); 
+    auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
+
+    // --- Require collection owners to register collection --- //
+    //check(isAuthorized(nft_collection, submitter), "Submitter is not authorized for this collection.");
+
+    // --- Check the providers table --- //
+    content_providers_table collections(get_self(), get_self().value);
+    auto itr = collections.find(nft_collection.value);
     
+    // --- Ensure the collection is not already registered --- //
+    check(itr == collections.end(), "NFT collection is already registered.");
+
+    // --- Register the collection --- //
+    collections.emplace(submitter, [&](auto& row) {
+        row.domain = nft_collection;
+        row.raw_domain = nft_collection.to_string();
+        row.tetra_loc = tetra_locode;
+    });
+
 }
 
-ACTION ups::addnftcol(const name domain, const name& submitter, const name& nft_collection) {
-    // --- Check if collection exists + use is authorized  --- //
-    
-
-
-}
-
-ACTION ups::addurl(const name domain, const name& submitter, const string& url) {
+ACTION ups::addurl(const name& submitter, const string& url, const name domain = false) {
     
 }
 
@@ -146,7 +159,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             if(parameter.size() <= 12){// --- Its a name
                 upsertup(up_quantity, from, Name.from(parameter), 0);
             } else {// --- It's a URL
-                content_name = parse_url_for_domain(parameter)
+                content_name = parse_url(parameter)
 
             }
             return;
@@ -154,13 +167,13 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             addcontent(name& submitter, string& url)
 
             return;
-        } else if (memo_man == "url") {
-            domain = parse_url_for_domain(parameter);
+        } else if (memo.size() <= 12) {
+            domain = parse_url(parameter);
 
             // --- Check if content is registered in _content --- //
 
         } else if (memo_man == "url") {
-        /*/ --- 
+        /*/ --- TODO
         
         Accept a dynamic name that represents a domain
         youtub20hfbv|https://www.youtube.com/watch?v=dQw4w9Wg
