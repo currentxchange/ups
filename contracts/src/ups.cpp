@@ -24,7 +24,7 @@ ACTION ups::regdomain(const name& submitter, const string& url, const vector<uin
     content_provider prov_data;
     prov_data.domain = domain_parsed;    
     prov_data.tetra_locode = tetra_locode;
-    prov_data.raw_domain = url;
+    prov_data.raw_domain = domain_chopped;
 
     // Save the content provider information
     content_prov.set(prov_data, get_self());

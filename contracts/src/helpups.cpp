@@ -133,21 +133,59 @@ void removecontent(uint64_t content_id) {
 }//END removecont()
 
 // --- Handles adding both NFT content and URL content --- //
-void addcontent(name& submitter, string& url, name domain = false, name collection = false, uint32_t templateid = false) { //CHECK need ""_n instead of false?
+void addcontent(name& submitter, vector<double> latlng = {0.0,0.0}, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0}, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0) { //CHECK need ""_n instead of false?
 
     // --- Check if submitter is in providers table --- //
     require_auth(submitter): 
 
+    bool is_nft = (collection != ""_n) && !templateid;
 
-    
-    name domain = parse_url(url);
-    hash url_hash = parse_url(url, 1);
+    // --- Handle URL --- //
+    if ( !is_nft && url != "" ) {
+      name domain = parse_url(url);
+      hash url_hash = parse_url(url, 1);
+      hash url_chopped = parse_url(url, 0, 1);
 
-  // --- Check if content already exists --- //
+      // --- Check if domain is registered --- //
+      content_provider_singleton content_prov(get_self(), domain_parsed.value);
+      check(content_prov.exists(), "Register the doman to start adding content for upvotes");
+
+      // --- Check if content already exists --- //
+        content_table contents(get_self(), get_self().value);
+        auto gudhash = contents.get_index<"bygudahash"_n>();
+        auto itr = gudhash.find(url_hash);
+
+        check(itr == gudhash.end(), "Content already exists, you can sends ups now");
+
+        // Insert new content
+        contents.emplace(submitter, [&](auto& row) {
+            row.id = contents.available_primary_key();
+            row.domain = domain;
+            row.submitter = submitter;
+            row.link = url_chopped;
+            row.external_id = 0;
+            row.gudahash = url_hash;
+            row.created = time_point_sec::sec_since_epoch();
+            row.latlng = latlng;
+            row.tetra_loc = tetra_locode;
+        });
+    } else if ( is_nft ) {
+      // --- Handle NFT --- //
+      // --- Check the providers table --- //
+      content_provider_singleton content_prov(get_self(), nft_collection.value);
+
+      // --- Ensure the collection is not already registered --- //
+      check(content_prov.exists(), "This collection is not registered. Call regnftcol first.");
 
 
-    
+      // --- Check if templateid is valid --- //
+      templates_t templates_table(ATOMICASSETS_ACCOUNT, collection.value);
+      auto template_itr = templates_table.find(templateid);
+      check(template_itr != templates_table.end(), "Template does not exist");
 
+    } else {
+      check(false, "This is not a valid URL or NFT");
+    }
 
     // dont forget : row.id = _ups.available_primary_key();
 }
