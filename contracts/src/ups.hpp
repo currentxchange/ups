@@ -37,6 +37,8 @@ TABLE content_table {
   name domain;
   name submitter;
   string link;
+  uint32_t external_id;
+  time_point created;
   checksum256 gudahash;
   vector<double> latlng({0.0,0.0});
   vector<uint32_t> tetra_loc({0,0,0,0});
@@ -119,13 +121,13 @@ using content_table_index = multi_index<name("content"), content_table,
     name upsender;
     name upcatcher;
     uint32_t upscount; // Should be either BIGSOL or sol up or both
-    uint32_t initiated;
-    uint32_t updated; 
+    time_point_sec initiated;
+    time_point_sec updated; 
     uint64_t primary_key() const { return iouid; }
     uint64_t by_upcatcher() const { return upcatcher.value; }
     uint64_t by_upsender() const { return upsender.value; }
-    uint64_t by_upscount() const { return (uint64_t) upscount; }
-    uint64_t by_initiated() const { return (uint64_t) initiated; }
+    uint64_t by_upscount() const { return (uint64_t) upscount.sec_since_epoch(); }
+    uint64_t by_initiated() const { return (uint64_t) initiated.sec_since_epoch(); }
     uint64_t by_updated() const { return (uint64_t) updated; }
   };
 
