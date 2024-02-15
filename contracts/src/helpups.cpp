@@ -251,9 +251,9 @@ void removeupper(name upsender) {
         if (upper_itr != uppers.end()) {
             uppers.erase(upper_itr);
         } else { // --- Add the user to Purgatory so oracle can remove them TODO add readme explanation about why this is needed
-            // Access the internallog table
+
             internallog_singleton internal_log(get_self(), get_self().value);
-            eosio::check(internal_log.exists(), "Internal log record does not exist.");
+            check(internal_log.exists(), "");
 
             // Fetch the existing internal log record
             auto log = internal_log.get();

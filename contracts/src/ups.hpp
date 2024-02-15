@@ -87,7 +87,7 @@ using content_table_index = multi_index<name("content"), content_table,
   TABLE totals {
     uint64_t content_id;
     uint32_t totalups; 
-    uint32_t updated;
+    time_point_sec updated;
     
     uint64_t primary_key() const { return content_id; }
   };
@@ -98,8 +98,8 @@ using content_table_index = multi_index<name("content"), content_table,
   // --- Activity stats for uppers (For future awards) --- //
   TABLE uppers {
     name upsender;
-    uint32_t firstup;
-    uint32_t lastup;
+    time_point_sec firstup;
+    time_point_sec lastup;
     uint32_t totalups;
     uint32_t claimable; //TODO ensure this is reflected in the totals 
     uint64_t primary_key() const { return upsender.value; }
@@ -143,12 +143,11 @@ using content_table_index = multi_index<name("content"), content_table,
   >;
 
   
-  // WARN we probably don't need this table with new paradigm, remove if unused at contract completion
   TABLE internallog { // track Macro statistics for each token 
-    uint32_t lastpay; // Last time the payment was called for all 
-    uint32_t lastfullpay; 
+    time_point_sec lastpay; // Last time the payment was called for all 
+    time_point_sec lastfullpay; 
     vector<name> purgatory; // Accounts in limbo due to partial deletions, call removeupper() to finish 
-    
+
     uint64_t primary_key() const { return (uint64_t) lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
   };
   
