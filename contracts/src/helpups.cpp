@@ -168,7 +168,7 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
   std::vector<uint64_t> ious_to_erase;
 
   // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
-  while(iou_itr != _ious.end() && (maxpay == 0 || paid < maxpay)){
+  while(iou_itr != _ious.end() && (maxpay == 0 || paid < maxpay) && records_processed <= 12){
     auto& iou = iou_itr;
     paid += iou.upscount; 
     ious_to_erase.push_back(iou.iouid); // Track IOU IDs for deletion
