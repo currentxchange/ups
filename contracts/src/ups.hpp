@@ -99,6 +99,7 @@ using content_table_index = multi_index<name("content"), content_table,
     uint32_t firstup;
     uint32_t lastup;
     uint32_t totalups;
+    uint32_t claimable; //TODO ensure this is reflected in the totals 
     uint64_t primary_key() const { return upsender.value; }
   };
   
