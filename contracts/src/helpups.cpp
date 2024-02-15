@@ -12,8 +12,8 @@ This allows us to be more flexible with what constitutes an up:
 
 // --- DISPATCHER Checks + calls logup() updateiou() and updatetotal() --- //
 void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative) {
-
-    // --- Check content Id valid
+      require_auth( upsender );
+    // --- Check content Id valid --- //
 
     if (!negative){
         // --- Log the ups in ups table --- // 
@@ -23,7 +23,7 @@ void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool n
         upsert_total(upscount, upsender, content_id, negative);
 
         //  --- Call action to update IOU table ----- //
-        ious::updateiou(upscount, upsender, content_id, false);
+        upsert_ious(upscount, upsender, content_id, false);
     }
 }//END upsertup()
 
@@ -61,7 +61,7 @@ void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool ne
 
 // --- Upsert _uppers and _totals --- // TODO update to this contract
 void upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id, bool negative) {
-  require_auth( upsender );
+
 
   // --- Update / Insert _totals record of cumulative song Ups --- //
   _totals(get_self(), content_id);
@@ -80,13 +80,13 @@ void upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id, bool
     if(!negative){
       _totals.modify(total_iterator, upsender, [&]( auto& row ) {
         row.key = content_id;
-      row.totalups += newups;
+        row.totalups += newups;
         row.updated = time_of_up;
       });
     } else { // Subtract the value from totals
       _totals.modify(total_iterator, upsender, [&]( auto& row ) {
         row.key = content_id;
-      row.totalups -= newups;
+        row.totalups -= newups;
         row.updated = time_of_up;
       });
     }
@@ -109,11 +109,42 @@ void upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id, bool
   else 
   {
     _uppers.modify(listener_iterator, upsender, [&]( auto& row ) {
-      row.lastup = eosio::time_point_sec::sec_since_epoch();
+      row.lastup = time_point_sec::sec_since_epoch();
       row.totalups += newups;
     });
   }//END if(results _uppers)
 }//END upsert_total()
+
+// --- Upsert IOUs --- //
+void upsert_ious(uint32_t upscount, name &upsender, uint64_t content_id, bool subtract){
+  //CHECK Not using any auth, double check we already did that 
+
+  check(has_auth(get_self()), "Only the contract can modify the ious table. ")
+
+  // --- Add record to _ups --- //
+  _ious(get_self(), get_self().value); 
+  auto ious_itr = _ious.find(iouid); 
+  uint32_t time_of_up = time_point_sec::sec_since_epoch();
+  if( ious_itr == _ups.end())
+  { // -- Make New Record
+    _ious.emplace(upsender, [&]( auto& row ) {
+      row.key = _ious.available_primary_key(); //CHECK this is the right value before the .
+      row.upsender = upsender;
+      row.upcatcher = artistacc;
+      row.upscount = upscount;
+      row.initialized = time_of_up;
+      row.updated = time_of_up;
+    });
+  } 
+  else 
+  { // -- Update Record
+    _ious.modify(ious_itr, upsender, [&]( auto& row ) {
+      row.upscount += upscount;
+      row.upstype = upstype;// Can be from SOL -> BIGSOL
+      row.updated = time_of_up;
+    });
+  }//END if(results _ups)
+}//END upsert_ious()
 
 
 void removeiou(name sender, name receiver) {
