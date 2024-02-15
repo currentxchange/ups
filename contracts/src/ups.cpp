@@ -7,7 +7,7 @@ ACTION ups::payup(name upsender) {
     
 }
 
-ACTION ups::updatecont(uint64_t content_id) {
+ACTION ups::updatecont(uint64_t content_id, ) {
     
 }
 
@@ -178,6 +178,14 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 
     // --- Set the new config in the singleton --- //
     _config.set(new_conf, get_self()); 
+
+    // --- Set up the internal log --- //
+    internallog_singleton internlog(get_self(), get_self().value);
+    internallog internlog_data = internlog.get_or_default(internallog{
+        .lastpay = current_time_point();
+        .lastfullpay = current_time_point();
+        .purgatory = std::vector<name>(); // Empty vector
+    });
 }
 
 
