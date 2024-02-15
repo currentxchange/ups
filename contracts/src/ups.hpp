@@ -45,7 +45,8 @@ TABLE content_table {
 
   uint64_t primary_key() const { return id; } // use this to return the bitshift
   uint64_t by_domain() const { return domain.value; }
-  checksum256 by_gudahash() const { return gudahash; }
+  uint64_t by_external_id() const { return domain.value; }
+  checksum256 by_gudahash() const { return (uint_64) external_id; }
   uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
   uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
   uint64_t by_tetraloc3() const { return static_cast<uint64_t>(tetra_loc[2]); }
@@ -55,6 +56,7 @@ TABLE content_table {
 
 using content_table_index = multi_index<name("content"), content_table,
   indexed_by<"bydomain"_n, const_mem_fun<content_table, uint64_t, &content_table::by_domain>>,
+  indexed_by<"byextid"_n, const_mem_fun<content_table, uint64_t, &content_table::by_external_id>>,
   indexed_by<"bygudahash"_n, const_mem_fun<content_table, checksum256, &content_table::by_gudahash>>,
   indexed_by<"bytetra1"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc1>>,
   indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>,
