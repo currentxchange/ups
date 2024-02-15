@@ -208,12 +208,67 @@ void upsertupper(uint32_t upscount, name upsender) {
 
 // WARN must add checks to payment actions to avoid paying ""_n
 void removeupper(name upsender) {
-  // Remove from IOUS table where upsender is the upcatcher or the upsender
-  // MAX 36 records per upsender
-  // Update records in the content table where upsender is the submitter, set the upsender to ""_n
-  // if there are no more records to delete, delete user from uppers table
-  
-}//END removeupper()
+    check(has_auth(upsender) || has_auth(get_self()), "Only you can reset your account"); // Ensure only the contract can call this action
+
+    // --- Get the IOUs --- //
+    ious_table ious(get_self(), get_self().value);
+    auto upsender_idx = ious.get_index<"byupsender"_n>();
+    auto upcatcher_idx = ious.get_index<"byupcatcher"_n>();
+
+    auto upsender_itr = upsender_idx.lower_bound(upsender.value);
+    auto upcatcher_itr = upcatcher_idx.lower_bound(upsender.value);
+    int count = 0;
+
+    while (upsender_itr != upsender_idx.end() && upsender_itr->upsender == upsender && count < 36) {
+        upsender_itr = upsender_idx.erase(upsender_itr);
+        count++;
+    }
+
+    count = 0; // Reset count for the next loop
+    while (upcatcher_itr != upcatcher_idx.end() && upcatcher_itr->upcatcher == upsender && count < 36) {
+        upcatcher_itr = upcatcher_idx.erase(upcatcher_itr);
+        count++;
+    }
+
+    // Access the content table and update records where upsender is the submitter
+    content_table contents(get_self(), get_self().value);
+    auto submitter_idx = contents.get_index<"bysubmitter"_n>();
+    auto submitter_itr = submitter_idx.lower_bound(upsender.value);
+
+    while (submitter_itr != submitter_idx.end() && submitter_itr->submitter == upsender) {
+        contents.modify(*submitter_itr, same_payer, [&](auto& row) {
+            row.submitter = ""_n; // Set the submitter to an empty name
+        });
+        submitter_itr++;
+    }
+
+    // Check if there are no more records in the ious table related to the upsender
+    if (upsender_idx.lower_bound(upsender.value) == upsender_idx.end() && 
+        upcatcher_idx.lower_bound(upsender.value) == upcatcher_idx.end()) {
+        // Access the uppers table and remove the upsender
+        uppers_table uppers(get_self(), get_self().value);
+        auto upper_itr = uppers.find(upsender.value);
+        if (upper_itr != uppers.end()) {
+            uppers.erase(upper_itr);
+        } else { // --- Add the user to Purgatory so oracle can remove them TODO add readme explanation about why this is needed
+            // Access the internallog table
+            internallog_singleton internal_log(get_self(), get_self().value);
+            eosio::check(internal_log.exists(), "Internal log record does not exist.");
+
+            // Fetch the existing internal log record
+            auto log = internal_log.get();
+
+            // Check if the upsender is already in purgatory
+            if (std::find(log.purgatory.begin(), log.purgatory.end(), upsender) == log.purgatory.end()) {
+                // Add the upsender to purgatory
+                log.purgatory.push_back(upsender);
+
+                // Save the updated internal log record
+                internal_log.set(log, get_self());
+            }
+        }
+}
+//END removeupper()
 
 void removecontent(uint64_t content_id) {
     
