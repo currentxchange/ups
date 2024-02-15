@@ -206,8 +206,13 @@ void upsertupper(uint32_t upscount, name upsender) {
     
 }//END upsertupper()
 
+// WARN must add checks to payment actions to avoid paying ""_n
 void removeupper(name upsender) {
-    
+  // Remove from IOUS table where upsender is the upcatcher or the upsender
+  // MAX 36 records per upsender
+  // Update records in the content table where upsender is the submitter, set the upsender to ""_n
+  // if there are no more records to delete, delete user from uppers table
+  
 }//END removeupper()
 
 void removecontent(uint64_t content_id) {

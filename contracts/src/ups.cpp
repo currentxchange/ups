@@ -2,6 +2,8 @@
 
 
 ACTION ups::payup(name upsender) {
+
+    check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name.")
     
 }
 
