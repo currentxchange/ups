@@ -24,7 +24,7 @@ void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool n
 
         //  --- Call action to update IOU table ----- //
         upsert_ious(upscount, upsender, content_id, false);
-    }
+    } //else call removal functions
 }//END upsertup()
 
 // --- Update running log of ups --- // TODO update to this contract
@@ -146,9 +146,60 @@ void upsert_ious(uint32_t upscount, name &upsender, uint64_t content_id, bool su
   }//END if(results _ups)
 }//END upsert_ious()
 
+// --- Send the beautiful people their tokens  --- //
+void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
 
-void removeiou(name sender, name receiver) {
-    
+  //CHECK authorization needed?
+
+  // --- Check that the contract is the receiver --- //
+  config_table _config(get_self(), get_self().value);
+  check(_config.exists(), "Configuration must be set first. How did you even get here?");
+  auto conf = _config.get();
+
+  // Find the receiver records is in the _ious table
+
+  // --- Get the IOUs --- //
+  ious_table _ious(get_self(), receiver.value);
+  auto iou_itr = _ious.begin();
+  check(iou_itr != _ious.end(), "You are all paid up. Send some UPs and come back");
+  
+  // --- Calculate Payments --- //
+  uint32_t paid = 0;
+  std::vector<uint64_t> ious_to_erase;
+
+  // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
+  while(iou_itr != _ious.end() && (maxpay == 0 || paid < maxpay)){
+    auto& iou = iou_itr;
+    paid += iou.upscount; 
+    ious_to_erase.push_back(iou.iouid); // Track IOU IDs for deletion
+    iou_itr++;
+  }
+
+    // Calculate the total amount to be paid
+    asset total_payment = conf.one_reward_amount.amount * paid;
+
+  // --- Pay the people --- //
+  if(total_payment.amount > 0){
+    // Use the eosio.token transfer action to send the payment
+    action(
+        permission_level{get_self(), "active"_n},
+        conf.reward_token_contract, 
+        "transfer"_n,
+        std::make_tuple(get_self(), receiver, total_payment, std::string("Payment for IOUs"))
+    ).send();
+  }
+
+  //WARN move to removeiou --- Erase paid IOUs from the table --- //
+  for(auto& iouid: ious_to_erase){
+    auto itr = _ious.find(iouid);
+    if(itr != _ious.end()){
+        _ious.erase(itr);
+    }
+  }
+}//END pay_iou()
+
+void removeiou( ) {
+  // TEMPORARILY STILL IN PAYUP ACTION
 }//END removeiou()
 
 void upsertupper(uint32_t upscount, name upsender) {
@@ -241,6 +292,8 @@ void addcontent(name& submitter, vector<double> latlng = {0.0,0.0}, const vector
 }
 
 void deepremvcont(uint64_t content_id) {
+    // ---  --- //
+    require_auth(get_self()): 
     
 }
 

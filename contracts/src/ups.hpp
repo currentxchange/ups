@@ -123,7 +123,7 @@ using content_table_index = multi_index<name("content"), content_table,
     uint64_t iouid;
     name upsender;
     name upcatcher;
-    uint32_t upscount; // Should be either BIGSOL or sol up or both
+    uint32_t upscount;
     time_point_sec initiated;
     time_point_sec updated; 
     uint64_t primary_key() const { return iouid; }
@@ -143,10 +143,10 @@ using content_table_index = multi_index<name("content"), content_table,
   >;
 
   
-  
+  // WARN we probably don't need this table with new paradigm, remove if unused at contract completion
   TABLE internallog { // track Macro statistics for each token 
     uint32_t lastpay; // Last time the payment was called for all 
-    uint32_t lastfullpay; // All accounts sent BLUX 
+    uint32_t lastfullpay; 
     
     uint64_t primary_key() const { return (uint64_t) lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
   };
