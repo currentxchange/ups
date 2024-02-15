@@ -147,6 +147,7 @@ using content_table_index = multi_index<name("content"), content_table,
   TABLE internallog { // track Macro statistics for each token 
     uint32_t lastpay; // Last time the payment was called for all 
     uint32_t lastfullpay; 
+    vector<name> purgatory; // Accounts in limbo due to partial deletions, call removeupper() to finish 
     
     uint64_t primary_key() const { return (uint64_t) lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
   };
