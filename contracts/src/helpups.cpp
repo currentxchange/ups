@@ -149,7 +149,7 @@ void upsert_ious(uint32_t upscount, name &upsender, uint64_t content_id, bool su
 // --- Send the beautiful people their tokens  --- //
 void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
 
-  //CHECK authorization needed?
+  check(receiver != ""_n, "We can't pay no one.");
 
   // --- Check that the contract is the receiver --- //
   config_table _config(get_self(), get_self().value);

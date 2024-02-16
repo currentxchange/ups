@@ -2,8 +2,9 @@
 
 
 ACTION ups::payup(name upsender) {
+    // --- Require only the upsender to be able to claim rewards --- //
+    //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
 
-    check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name.")
     
 }
 
@@ -101,7 +102,7 @@ ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint3
 
 // WARN must add checks to payment actions to avoid paying ""_n
 ACTION ups::removeupper(name upsender) {
-    check(has_auth(upsender) || has_auth(get_self()), "Only you can reset your account"); // Ensure only the contract can call this action
+    check(has_auth(upsender) || has_auth(get_self()), "Only "+upsender.to_string()+" can reset their account"); // Ensure only the contract can call this action
 
     // --- Get the IOUs --- //
     ious_table ious(get_self(), get_self().value);
