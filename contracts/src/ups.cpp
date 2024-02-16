@@ -2,9 +2,7 @@
 
 
 ACTION ups::payup(name upsender) {
-
-    check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name.")
-    
+    check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name.")   
 }
 
 ACTION ups::updatecont(uint64_t content_id, ) {
@@ -203,7 +201,6 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
     check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
 
-
     name content_name; // --- To parse URL if needed 
     bool force_reg_content = false;
 
@@ -222,16 +219,14 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
                 upsertup(up_quantity, from, Name.from(parameter), 0);
             } else {// --- It's a URL
                 content_name = parse_url(parameter)
-
+                //TODO
             }
             return;
         } else if (memo_man == "reg") {
             addcontent(name& submitter, string& url)
-
             return;
         } else if (memo.size() <= 12) {
             domain = parse_url(parameter);
-
             // --- Check if content is registered in _content --- //
 
         } else if (memo_man == "url") {
@@ -239,7 +234,6 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         
         Accept a dynamic name that represents a domain
         youtub20hfbv|https://www.youtube.com/watch?v=dQw4w9Wg
-
         or a collection and a template 
         collection|templateid
 
@@ -253,9 +247,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     }
 
     // --- If '|' is not found in memo, treat the entire memo as a name
-
     check(memo.size() <= 12, "Please send Up with an contentid or register this content. reg|url")
-
 
   // --- Instantiate Content Table --- //
   _content ups(_self, _self.value);
@@ -263,8 +255,6 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
   // --- Check for content in table --- // 
   auto itr = ups.find(content_name);
   check(itr != ups.end(), "Content ID does not exist. Add it first.");
-
- 
   
   // --- Pass on to upsertup() to register in table --- //
   upsertup(up_quantity, from, content_name, 0);
