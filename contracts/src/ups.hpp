@@ -3,7 +3,6 @@
 #include <atomicassets-interface.hpp>
 #include <atomicassets-interface.hpp>
 
-
 /*/
 #include <checkformat.hpp>
 #include <atomicdata.hpp>
@@ -21,7 +20,7 @@ public:
 struct content_provider {
   name domain;
   string raw_domain;
-  vector<uint32_t> tetra_loc; // --- {Continent_Subregions M49, Nation Alpha 3, }
+  vector<uint32_t> tetra_loc; // --- Requires web4 headers {Continent_Subregions M49, Nation Alpha 3, Subdivision e.g. state, Postal code}
 
   uint64_t primary_key() const { return domain.value; }
 };
@@ -50,8 +49,8 @@ TABLE content_table { // CHECK final decision to use bitshift or auto increment
   vector<double> latlng({0.0,0.0});//CHECK I don't think this is how you set default values 
   vector<uint32_t> tetra_loc({0,0,0,0});
 
-  uint64_t primary_key() const { return id; } // use this to return the bitshift
-  uint64_t by_domain() const { return domain.value; } //check if needed with scoping
+  uint64_t primary_key() const { return id; } //CHECK use this to return the bitshift
+  uint64_t by_domain() const { return domain.value; } //CHECK if needed with scoping
   uint64_t by_external_id() const { return domain.value; }
   checksum256 by_gudahash() const { return (uint_64) external_id; }
   uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
@@ -110,7 +109,7 @@ using content_table_index = multi_index<name("content"), content_table,
     uint64_t primary_key() const { return upsender.value; }
   };
   
-    using uppers_table = multi_index<name("uppers"), uppers>;
+  using uppers_table = multi_index<name("uppers"), uppers>;
 
 
 
