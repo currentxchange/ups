@@ -157,8 +157,29 @@ using content_table_index = multi_index<name("content"), content_table,
   };
   
   using internallog_table = multi_index<name("internallog"), internallog>;
+/*/--- Alternate location if other way isn't efficient
+  TABLE location {
+    uint64_t    id;            // Unique ID for each location
+    uint32_t    int_code;      // Integer code for the location
+    string      iso_alpha3;    // ISO Alpha-3 code
+    string      iso_alpha2;    // ISO Alpha-2 code
+    string      location_name; // Name of the location
+    uint32_t    level;         // Level of location (e.g., country, state)
 
-private:  
+    uint64_t primary_key() const { return id; }
+    uint64_t by_int_code() const { return int_code; } // Secondary index for int_code
+    uint64_t by_level() const { return level; }
+
+    EOSLIB_SERIALIZE(location, (id)(int_code)(iso_alpha3)(iso_alpha2)(location_name)(level))
+  };
+
+  typedef eosio::multi_index<"locations"_n, location,
+      indexed_by<"byintcode"_n, const_mem_fun<location, uint64_t, &location::by_int_code>>, // Index for int_code
+      indexed_by<"bylevel"_n, const_mem_fun<location, uint64_t, &location::by_level>>
+  > locations_table;
+
+/*/
+
   TABLE config {
       name up_token_contract;
       symbol up_token_symbol;
@@ -175,7 +196,8 @@ private:
   // --- Declare Config Singleton --- //
   typedef singleton<name("config"), config> config_table;
 
-  
+  private:  
+
   void upsertup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
   void logup(uint32_t upscount name upsender, uint64_t content_id); 
   void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user

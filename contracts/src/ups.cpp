@@ -10,16 +10,42 @@ ACTION ups::payup(name upsender) {
     
 }
 
-ACTION ups::updatecont(uint64_t content_id, float latitude = 0.0, float longitude = 0.0, uint32_t continent_subregion = 1, uint32_t country = 0,  ) {
-    require_auth(get_self()); // Only contract can update content. Adjust as necessary.
+ACTION ups::updatecont(uint64_t content_id, float latitude = 0.0, float longitude = 0.0, uint32_t continent_subregion_code = 1, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_name = ""){
 
     // --- Get the content --- //
     content_table contents(get_self(), get_self().value);
     auto itr = contents.find(content_id);
     check(itr != contents.end(), "Content with the specified ID does not exist.");
 
+    check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter "+ itr->submitter.to_string() +" or the contract can update content.")
 
-}
+    // --- Validate and format Latitude and Longitude --- //
+    auto formatted_coords = validate_and_format_coords({latitude, longitude});
+    latitude = formatted_coords[0];
+    longitude = formatted_coords[1];
+
+    // --- Validate the Continent Subregion as a string or an int --- //
+    if (!continent_subregion_name.empty()) {
+        check(is_valid_continent_subregion(0, continent_subregion_name), "Invalid continent subregion name.");
+    } else {
+        check(is_valid_continent_subregion(continent_subregion_code), "Invalid continent subregion code.");
+    }
+
+    // --- Validate the country as a string or an int --- //
+    if (!country_name.empty()) {
+        check(is_valid_country(0, country_name), "Invalid country name.");
+    } else {
+        check(is_valid_country(country_code), "Invalid country code.");
+    }
+
+    // --- Update the content record --- //
+    contents.modify(itr, get_self(), [&](auto& row) {
+        row.latlng = {latitude, longitude};
+        row.tetra_loc = {continent_subregion, country};
+    });
+}//END updatecont()
+
+
 
 ACTION ups::regdomain(const name& submitter, const string& url, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0} ) {
 
@@ -77,6 +103,7 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const v
 }
 
 ACTION ups::addurl(const name& submitter, const string& url, const name domain = false) {
+    check(has_auth(get_self()), "This is only for ")
     
 }
 
