@@ -227,7 +227,7 @@ void addcontent(name& submitter, vector<double> latlng = {0.0,0.0}, const vector
 
       // --- Check if domain is registered --- //
       content_provider_singleton content_prov(get_self(), domain_parsed.value);
-      check(content_prov.exists(), "Register the doman to start adding content for upvotes");
+      check(content_prov.exists(), "Register the domain to start adding content for upvotes");
 
       // --- Check if content already exists --- //
         content_table contents(get_self(), get_self().value);

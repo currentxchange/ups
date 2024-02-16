@@ -47,7 +47,7 @@ TABLE content_table { // CHECK final decision to use bitshift or auto increment
   checksum256 gudahash;
   time_point_sec created;
   vector<double> latlng({0.0,0.0});//CHECK I don't think this is how you set default values 
-  vector<uint32_t> tetra_loc({0,0,0,0});
+  vector<uint32_t> tetra_loc({0,0});
 
   uint64_t primary_key() const { return id; } //CHECK use this to return the bitshift
   uint64_t by_domain() const { return domain.value; } //CHECK if needed with scoping
@@ -55,8 +55,6 @@ TABLE content_table { // CHECK final decision to use bitshift or auto increment
   checksum256 by_gudahash() const { return (uint_64) external_id; }
   uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
   uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
-  uint64_t by_tetraloc3() const { return static_cast<uint64_t>(tetra_loc[2]); }
-  uint64_t by_tetraloc4() const { return static_cast<uint64_t>(tetra_loc[3]); }
 
 };
 
@@ -66,8 +64,7 @@ using content_table_index = multi_index<name("content"), content_table,
   indexed_by<"bygudahash"_n, const_mem_fun<content_table, checksum256, &content_table::by_gudahash>>,
   indexed_by<"bytetra1"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc1>>,
   indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>,
-  indexed_by<"bytetra3"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc3>>,
-  indexed_by<"bytetra4"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc4>>,
+
 >;
 
   TABLE ups { 
@@ -207,7 +204,7 @@ public:
 
   ACTION regdomain(const name& submitter, const string& url);
 
-  ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
+  //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 
   ACTION regnftcol(const name& submitter, const name& nft_collection);
 

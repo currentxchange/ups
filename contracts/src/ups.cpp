@@ -2,14 +2,23 @@
 
 
 ACTION ups::payup(name upsender) {
-    // --- Require only the upsender to be able to claim rewards --- //
+    // --- Require only the upsender to be able to claim rewards [Optional] --- //
     //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
 
+    // --- Send to the payment dispatcher --- //
+    pay_iou(0, upsender);
     
 }
 
-ACTION ups::updatecont(uint64_t content_id, ) {
-    
+ACTION ups::updatecont(uint64_t content_id, float latitude = 0.0, float longitude = 0.0, uint32_t continent_subregion = 1, uint32_t country = 0,  ) {
+    require_auth(get_self()); // Only contract can update content. Adjust as necessary.
+
+    // --- Get the content --- //
+    content_table contents(get_self(), get_self().value);
+    auto itr = contents.find(content_id);
+    check(itr != contents.end(), "Content with the specified ID does not exist.");
+
+
 }
 
 ACTION ups::regdomain(const name& submitter, const string& url, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0} ) {
@@ -34,9 +43,15 @@ ACTION ups::regdomain(const name& submitter, const string& url, const vector<uin
     content_prov.set(prov_data, get_self());
 }
 
+/*/----
+  This functionality isn't included, but can be added   
+  Optionally, you can scope the config table to the name of a domain (content provider liek a web platform or a NFT collection)
+  Allows each content to have their own token for Ups + rewards
+
 ACTION ups::configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount) {
-// This functionality isn't in this contract, but can be added     
+
 }
+/*///---
 
 ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0}) {
     // --- Check if collection exists + user is authorized  --- //
