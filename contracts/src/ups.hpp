@@ -46,15 +46,17 @@ TABLE content_table { // CHECK final decision to use bitshift or auto increment
   uint32_t external_id;
   checksum256 gudahash;
   time_point_sec created;
-  vector<double> latlng({0.0,0.0});//CHECK I don't think this is how you set default values 
+  vector<float> latlng({0.0,0.0});//CHECK I don't think this is how you set default values 
   vector<uint32_t> tetra_loc({0,0});
 
   uint64_t primary_key() const { return id; } //CHECK use this to return the bitshift
   uint64_t by_domain() const { return domain.value; } //CHECK if needed with scoping
   uint64_t by_external_id() const { return domain.value; }
-  checksum256 by_gudahash() const { return (uint_64) external_id; }
-  uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
-  uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
+  checksum256 by_gudahash() const { return (uint64_t) external_id; }
+  uint64_t by_latitude() const { return static_cast<uint64_t>(latlng[0] * 10000); } 
+  uint64_t by_longitude() const { return static_cast<uint64_t>(latlng[1] * 10000); }
+  uint64_t by_tetraloc1() const { return (uint64_t) (tetra_loc[0]); }
+  uint64_t by_tetraloc2() const { return (uint64_t) (tetra_loc[1]); }
 
 };
 
@@ -62,6 +64,8 @@ using content_table_index = multi_index<name("content"), content_table,
   indexed_by<"bydomain"_n, const_mem_fun<content_table, uint64_t, &content_table::by_domain>>,
   indexed_by<"byextid"_n, const_mem_fun<content_table, uint64_t, &content_table::by_external_id>>,
   indexed_by<"bygudahash"_n, const_mem_fun<content_table, checksum256, &content_table::by_gudahash>>,
+  indexed_by<"bylatitude"_n, const_mem_fun<content_table, uint64_t, &content_table::by_latitude>>,
+  indexed_by<"bylongitude"_n, const_mem_fun<content_table, uint64_t, &content_table::by_longitude>>,
   indexed_by<"bytetra1"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc1>>,
   indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>,
 
