@@ -175,7 +175,6 @@ private:
   void logup(uint32_t upscount name upsender, uint64_t content_id); 
   void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user
   void updateupper(uint32_t upscount name upsender);
-  void removeupper(name upsender);
   void removecontent(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
   void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
   void addcontent(name& submitter, string& url, name domain = false, name collection = false, uint32_t templateid = false);
@@ -197,6 +196,8 @@ public:
   void up_catch( const name from, const name to, const asset quantity, const std::string memo );
   
   ACTION payup(name upsender = false); // User's call to pay themselves
+
+  ACTION removeupper(name upsender);
   
   ACTION updatecont(uint64_t content_id);
 
