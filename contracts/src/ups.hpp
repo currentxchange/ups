@@ -1,10 +1,13 @@
 #include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
 #include <atomicassets-interface.hpp>
+#include <atomicassets-interface.hpp>
 
+
+/*/
 #include <checkformat.hpp>
 #include <atomicdata.hpp>
-
+/*/
 
 using namespace eosio;
 using namespace std;
@@ -18,7 +21,7 @@ public:
 struct content_provider {
   name domain;
   string raw_domain;
-  vector<uint32_t> tetra_loc; //WARN may change to make this separate Continent Subregion and Nation values, and ignote the more local values for now
+  vector<uint32_t> tetra_loc; // --- {Continent_Subregions M49, Nation Alpha 3, }
 
   uint64_t primary_key() const { return domain.value; }
 };
@@ -27,12 +30,16 @@ typedef singleton<name("content_provider"), content_provider> content_provider_s
 
 /*/ --- SCOPED to name domain --- //
 Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by nation, .hpp in development), and postal code (if applicable, also in development)
-Indexes allow for efficient individual curation of content by location
-So, you can find the top content tagges for 
-Fucntions allow to check for the 
+| Option | Double insertion into anothr scope allow for global cu
+--- Curation of content by location ----
+Find the top content in each area by indexes provided.
+- Init table scoped to name domain e.g. youtube
+- Use index for a location by_tetraloc2 for nation e.g. COL
+- Returns all the content for Colombia
+- Then read the totals table for the # of ups
 /*/
 
-TABLE content_table {
+TABLE content_table { // CHECK final decision to use bitshift or auto increment
   uint64_t id;
   name domain;
   name submitter;
@@ -44,7 +51,7 @@ TABLE content_table {
   vector<uint32_t> tetra_loc({0,0,0,0});
 
   uint64_t primary_key() const { return id; } // use this to return the bitshift
-  uint64_t by_domain() const { return domain.value; }
+  uint64_t by_domain() const { return domain.value; } //check if needed with scoping
   uint64_t by_external_id() const { return domain.value; }
   checksum256 by_gudahash() const { return (uint_64) external_id; }
   uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
@@ -64,7 +71,6 @@ using content_table_index = multi_index<name("content"), content_table,
   indexed_by<"bytetra4"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc4>>,
 >;
 
-
   TABLE ups { 
     uint64_t upid; 
     uint64_t content_id;
@@ -74,7 +80,6 @@ using content_table_index = multi_index<name("content"), content_table,
     uint64_t primary_key() const { return upid; }
     uint64_t by_content_id() const { return content_id; }
     uint64_t by_ups() const { return (uint64_t) totalups; }
-
     uint64_t by_tuid() const { return (uint64_t) tuid; }
   };
   
@@ -196,7 +201,7 @@ public:
   [[eosio::on_notify("*::transfer")]] // CHECK REQUIRES correct contract for SOL/BLUX Listens for any token transfer
   void up_catch( const name from, const name to, const asset quantity, const std::string memo );
   
-  ACTION payup(name upsender = false); // User's call to pay themselves
+  ACTION payup(name upsender = false); // User's call to pay themselves, oracle call to pay people
   
   ACTION updatecont(uint64_t content_id);
 
