@@ -107,19 +107,12 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const v
 
 ACTION ups::addurl(vector<float> latlng = {0.0,0.0}, const vector<uint32_t>& tetra_locode = {0, 0}, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0) { 
     // --- Access the config singleton --- //
-    config_table _config(get_self(), get_self().value); 
-
-    // --- Check if the config exists --- //
-    check(_config.exists(), "Call setconfig() then come back.");
-
-    // --- Get the existing config --- //
-    auto conf = _config.get();
+    auto conf = check_config();
 
     check(has_auth(submitter), "This is only for the contract, add URLs by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+"with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
 
     // --- Call dispatcher function --- // 
     addcontent(get_self(), latlng, tetra_locode, url, domain, collection, templateid);
-
 
     return;
 }//END addurl

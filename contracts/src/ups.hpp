@@ -124,8 +124,11 @@ using content_table_index = multi_index<name("content"), content_table,
   
   // --- Store record of who to pay --- // 
   // CHECK (in .cpp) that we are paying both the upsender + upcatcher
+  // CHECK that we are using the indexes to get the upsender, etc
   TABLE ious {
     uint64_t iouid;
+    uint64_t content_id;
+    uint32_t tuid;
     name upsender;
     name upcatcher;
     uint32_t upscount;
@@ -134,6 +137,8 @@ using content_table_index = multi_index<name("content"), content_table,
     uint64_t primary_key() const { return iouid; }
     uint64_t by_upcatcher() const { return upcatcher.value; }
     uint64_t by_upsender() const { return upsender.value; }
+    uint64_t by_content_id() const { return content_id; }
+    uint64_t by_tuid() const { return (uint64_t) tuid; }
     uint64_t by_upscount() const { return (uint64_t) upscount.sec_since_epoch(); }
     uint64_t by_initiated() const { return (uint64_t) initiated.sec_since_epoch(); }
     uint64_t by_updated() const { return (uint64_t) updated; }
@@ -143,6 +148,8 @@ using content_table_index = multi_index<name("content"), content_table,
     eosio::indexed_by<"byupcatcher"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upcatcher>>,
     eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upsender>>,
     eosio::indexed_by<"byupscount"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upscount>>,
+        eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_content_id>>,
+            eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_tuid>>,
     eosio::indexed_by<"byinitiated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_initiated>>,
     eosio::indexed_by<"byupdated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_updated>>
   >;

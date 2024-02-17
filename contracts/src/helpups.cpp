@@ -121,15 +121,18 @@ void upsert_ious(uint32_t upscount, name &upsender, uint64_t content_id, bool su
 
   check(has_auth(get_self()), "Only the contract can modify the ious table. ")
 
-  // --- Add record to _ups --- //
+  // --- Add record to _ups --- // 
   _ious(get_self(), get_self().value); 
   auto ious_itr = _ious.find(iouid); 
   uint32_t time_of_up = time_point_sec::sec_since_epoch();
+  uint32_t = find_tu();
   if( ious_itr == _ups.end())
   { // -- Make New Record
     _ious.emplace(upsender, [&]( auto& row ) {
-      row.key = _ious.available_primary_key(); //CHECK this is the right value before the .
+      row.key = _ious.available_primary_key(); 
       row.upsender = upsender;
+      row.content_id = content_id;
+      row.tuid = timeunit;
       row.upcatcher = artistacc;
       row.upscount = upscount;
       row.initialized = time_of_up;
@@ -161,7 +164,7 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
   // --- Get the IOUs --- //
   ious_table _ious(get_self(), receiver.value);
   auto iou_itr = _ious.begin();
-  check(iou_itr != _ious.end(), "You are all paid up. Send some UPs and come back");
+  check(iou_itr != _ious.end(), "You are all paid up. Send some Ups and come back");
   
   // --- Calculate Payments --- //
   uint32_t paid = 0;
@@ -179,17 +182,17 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
     asset total_payment = conf.one_reward_amount.amount * paid;
 
   // --- Pay the people --- //
-  if(total_payment.amount > 0){
+  if(total_payment.amount > 0 && paythem){
     // Use the eosio.token transfer action to send the payment
     action(
         permission_level{get_self(), "active"_n},
         conf.reward_token_contract, 
         "transfer"_n,
-        std::make_tuple(get_self(), receiver, total_payment, std::string("Payment for IOUs"))
+        std::make_tuple(get_self(), receiver, total_payment, std::string("Rewards for "+receiver.to_string()))
     ).send();
   }
 
-  //WARN move to removeiou --- Erase paid IOUs from the table --- //
+  // --- Erase paid IOUs from the table --- //
   for(auto& iouid: ious_to_erase){
     auto itr = _ious.find(iouid);
     if(itr != _ious.end()){
@@ -198,9 +201,6 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
   }
 }//END pay_iou()
 
-void removeiou( ) {
-  // TEMPORARILY STILL IN PAYUP ACTION
-}//END removeiou()
 
 void upsertupper(uint32_t upscount, name upsender) {
     
@@ -208,11 +208,13 @@ void upsertupper(uint32_t upscount, name upsender) {
 
 
 void removecontent(uint64_t content_id) {
+
+  // delete from totals table, ups table, 
     
 }//END removecont()
 
 // --- Handles adding both NFT content and URL content --- //
-void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<uint32_t>& tetra_locode = {0, 0}, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0) { //CHECK need ""_n instead of false?
+void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<uint32_t>& tetra_locode = {0, 0}, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0) { 
 
     // --- Check if submitter is in providers table --- //
     require_auth(submitter): 
@@ -240,6 +242,7 @@ void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<
         auto formatted_coords = validate_and_format_coords({latitude, longitude});
         latitude = formatted_coords[0];
         longitude = formatted_coords[1];
+
 
         // Insert new content
         contents.emplace(submitter, [&](auto& row) {
@@ -296,6 +299,7 @@ void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<
 void deepremvcont(uint64_t content_id) {
     // ---  --- //
     require_auth(get_self()): 
+    //
     
 }
 
@@ -303,27 +307,19 @@ void deepremvcont(uint64_t content_id) {
 // --- Returns the current Time Unit --- //
 uint32_t find_tu(uint32_t& momentuin, uint32_t tu_length){
   // 1561139700 is the first Time Unit in Seconds
-  uint32_t time_unit = floor((momentuin - 1561139700) / tu_length);  // Divide by the length of a Time Unit in seconds
+  uint32_t time_unit = floor(momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
   return time_unit;
 }
 
 // --- Returns the current Time Unit --- //
-uint32_t find_tu(uint32_t tu_length){
+uint32_t find_tu(uint32_t tu_length = 0){
+  if (!tu_length){
+    auto conf = check_config();
+    tu_length = conf.timeunit;
+  }
   uint32_t momentuin = eosio::time_point_sec::sec_since_epoch();
-  uint32_t time_unit = floor((momentuin - 1561139700) / tu_length);  // Divide by the length of a Time Unit in seconds
+  uint32_t time_unit = floor(momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
   return time_unit;
-}
-
-// --- Get content_id from iouid (concat of tuid + content_id) --- //
-uint32_t iouid_to_contentid(uint32_t& iouid){
-  uint32_t content_id = (uint32_t) iouid;
-  return content_id;
-}
-
-// --- Get Tuid from iouid (concat of tuid + content_id) --- //
-uint32_t iouid_to_tuid(uint32_t& iouid){
-  uint32_t tuid = (uint32_t iouid>>32);
-  return tuid;
 }
 
 // --- Returns Name from Domain or url checksum256 if whole thang --- //
