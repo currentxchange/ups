@@ -1,9 +1,8 @@
 #include "ups.hpp"
 
-
 ACTION ups::payup(name upsender) {
     /*/ --- Require only the upsender to be able to claim rewards [Optional] --- //
-    This allows for anyone to call the action to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
+    Commented out, action allows for anyone to call the action to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
     /*/
 
     //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
@@ -27,7 +26,6 @@ ACTION ups::updatecont(uint64_t content_id, float latitude = 0.0, float longitud
         latitude = formatted_coords[0];
         longitude = formatted_coords[1];
     }
-
 
     // --- Validate the Continent Subregion as a string or an int --- //
     if (!continent_subregion_name.empty()) {
@@ -107,10 +105,24 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const v
     content_prov.set(new_provider, submitter); // --- Submitter pays to register
 }
 
-ACTION ups::addurl(const name& submitter, const string& url, const name domain = false) {
-    check(has_auth(get_self()), "This is only for ")
-    
-}
+ACTION ups::addurl(vector<float> latlng = {0.0,0.0}, const vector<uint32_t>& tetra_locode = {0, 0}, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0) { 
+    // --- Access the config singleton --- //
+    config_table _config(get_self(), get_self().value); 
+
+    // --- Check if the config exists --- //
+    check(_config.exists(), "Call setconfig() then come back.");
+
+    // --- Get the existing config --- //
+    auto conf = _config.get();
+
+    check(has_auth(submitter), "This is only for the contract, add URLs by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+"with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+
+    // --- Call dispatcher function --- // 
+    addcontent(get_self(), latlng, tetra_locode, url, domain, collection, templateid);
+
+
+    return;
+}//END addurl
 
 //TODO WARN needs update to remove the up records
 ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint32_t template_id = 0) {
