@@ -2,9 +2,11 @@
 
 
 ACTION ups::payup(name upsender) {
-    // --- Require only the upsender to be able to claim rewards [Optional] --- //
-    //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
+    /*/ --- Require only the upsender to be able to claim rewards [Optional] --- //
+    This allows for anyone to call the action to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
+    /*/
 
+    //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
     // --- Send to the payment dispatcher --- //
     pay_iou(0, upsender);
     
