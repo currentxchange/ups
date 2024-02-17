@@ -22,9 +22,12 @@ ACTION ups::updatecont(uint64_t content_id, float latitude = 0.0, float longitud
     check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter "+ itr->submitter.to_string() +" or the contract can update content.")
 
     // --- Validate and format Latitude and Longitude --- //
-    auto formatted_coords = validate_and_format_coords({latitude, longitude});
-    latitude = formatted_coords[0];
-    longitude = formatted_coords[1];
+    if (latitude == 0.0 && longitude == 0.0){
+        auto formatted_coords = validate_and_format_coords({latitude, longitude});
+        latitude = formatted_coords[0];
+        longitude = formatted_coords[1];
+    }
+
 
     // --- Validate the Continent Subregion as a string or an int --- //
     if (!continent_subregion_name.empty()) {
