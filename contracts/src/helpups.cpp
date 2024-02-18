@@ -11,7 +11,7 @@ This allows us to be more flexible with what constitutes an up:
 
 
 // --- DISPATCHER Checks + calls logup() updateiou() and updatetotal() --- //
-void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative) {
+void upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative) {
       require_auth( upsender );
     // --- Check content Id valid --- //
 
@@ -202,18 +202,14 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
 }//END pay_iou()
 
 
-void upsertupper(uint32_t upscount, name upsender) {
-    
-}//END upsertupper()
-
 
 void removecontent(uint64_t content_id) {
 
-  // delete from totals table, ups table, 
+  // delete from totals table, ups table, ious table NOTE currently in action not here
     
 }//END removecont()
 
-// --- Handles adding both NFT content and URL content --- //
+// --- Handles adding both NFT content and URL content --- // TODO add to the new content_domain singleton
 void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<uint32_t>& tetra_locode = {0, 0}, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0) { 
 
     // --- Check if submitter is in providers table --- //
@@ -256,6 +252,7 @@ void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<
             row.latlng = latlng;
             row.tetra_loc = tetra_locode;
         });
+
     } else if ( is_nft ) {
       // --- Handle NFT --- //
       // --- Check the providers table --- //
@@ -296,12 +293,7 @@ void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<
     // dont forget : row.id = _ups.available_primary_key();
 }
 
-void deepremvcont(uint64_t content_id) {
-    // ---  --- //
-    require_auth(get_self()): 
-    //
-    
-}
+
 
 
 // --- Returns the current Time Unit --- //

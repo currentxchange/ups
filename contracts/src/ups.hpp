@@ -67,9 +67,15 @@ using content_table_index = multi_index<name("content"), content_table,
   indexed_by<"bylatitude"_n, const_mem_fun<content_table, uint64_t, &content_table::by_latitude>>,
   indexed_by<"bylongitude"_n, const_mem_fun<content_table, uint64_t, &content_table::by_longitude>>,
   indexed_by<"bytetra1"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc1>>,
-  indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>,
-
+  indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>
 >;
+
+TABLE content_domain {
+    uint64_t content_id;
+    name domain;
+    uint64_t primary_key() const { return content_id; }
+};
+typedef singleton<name("contentdomain"), content_domain> content_domain_table;
 
   TABLE ups { 
     uint64_t upid; 
@@ -113,15 +119,6 @@ using content_table_index = multi_index<name("content"), content_table,
   using uppers_table = multi_index<name("uppers"), uppers>;
 
 
-
-  TABLE schemas_s {
-      name schema_name;
-      vector <FORMAT> format;
-
-      uint64_t primary_key() const { return schema_name.value; }
-  };
-
-  
   // --- Store record of who to pay --- // 
   // CHECK (in .cpp) that we are paying both the upsender + upcatcher
   // CHECK that we are using the indexes to get the upsender, etc
@@ -148,8 +145,8 @@ using content_table_index = multi_index<name("content"), content_table,
     eosio::indexed_by<"byupcatcher"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upcatcher>>,
     eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upsender>>,
     eosio::indexed_by<"byupscount"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upscount>>,
-        eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_content_id>>,
-            eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_tuid>>,
+    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_content_id>>,
+    eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_tuid>>,
     eosio::indexed_by<"byinitiated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_initiated>>,
     eosio::indexed_by<"byupdated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_updated>>
   >;
@@ -159,11 +156,13 @@ using content_table_index = multi_index<name("content"), content_table,
     time_point_sec lastpay; // Last time the payment was called for all 
     time_point_sec lastfullpay; 
     vector<name> purgatory; // Accounts in limbo due to partial deletions, call removeupper() to finish 
+    vector<uint64_t> purg_content;
 
     uint64_t primary_key() const { return (uint64_t) lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
   };
   
-  using internallog_table = multi_index<name("internallog"), internallog>;
+  typedef singleton<name("internallog"), internallog> internallog_table;
+  //using internallog_table = multi_index<name("internallog"), internallog>;
 /*/--- Alternate location if other way isn't efficient
   TABLE location {
     uint64_t    id;            // Unique ID for each location
@@ -207,7 +206,6 @@ using content_table_index = multi_index<name("content"), content_table,
 
   void upsertup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
   void logup(uint32_t upscount name upsender, uint64_t content_id); 
-  void removeiou(name sender, name receiver); // Receiver or sender can be set to dummy value to delete all for a user
   void updateupper(uint32_t upscount name upsender);
   void removecontent(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
   void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
@@ -218,7 +216,7 @@ using content_table_index = multi_index<name("content"), content_table,
   ups_table _ups;
   uppers_table _uppers;
   totals_table _totals;
-  internallog_table _internallog;
+  //internallog_table _internallog;
   content_table _content;
 
 

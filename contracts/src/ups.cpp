@@ -170,13 +170,13 @@ ACTION ups::removeupper(name upsender) {
         count++;
     }
 
-    count = 0; // Reset count for the next loop
+    count = 0; 
     while (upcatcher_itr != upcatcher_idx.end() && upcatcher_itr->upcatcher == upsender && count < 36) {
         upcatcher_itr = upcatcher_idx.erase(upcatcher_itr);
         count++;
     }
 
-    // Access the content table and update records where upsender is the submitter
+    // --- Get content where upsender is the submitter --- //
     content_table contents(get_self(), get_self().value);
     auto submitter_idx = contents.get_index<"bysubmitter"_n>();
     auto submitter_itr = submitter_idx.lower_bound(upsender.value);
@@ -198,7 +198,7 @@ ACTION ups::removeupper(name upsender) {
             uppers.erase(upper_itr);
         } else { // --- Add the user to Purgatory so oracle can remove them TODO add readme explanation about why this is needed
 
-            internallog_singleton internal_log(get_self(), get_self().value);
+            internallog_table internal_log(get_self(), get_self().value);
             check(internal_log.exists(), "");
 
             // Fetch the existing internal log record
@@ -297,11 +297,12 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     _config.set(new_conf, get_self()); 
 
     // --- Set up the internal log --- //
-    internallog_singleton internlog(get_self(), get_self().value);
-    internallog internlog_data = internlog.get_or_default(internallog{
+    internallog_table internlog(get_self(), get_self().value);
+    internallog internlog_data = internlog.get_or_default(internallog{//CHECK does this need to set a variable?
         .lastpay = current_time_point();
         .lastfullpay = current_time_point();
-        .purgatory = std::vector<name>(); // Empty vector
+        .purgatory = vector<name>(); 
+        .purg_content = vector<uint64_t>();
     });
 }
 
@@ -343,6 +344,9 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             return;
         } else if (memo_man == "reg") {
             addcontent(name& submitter, string& url)
+            return;
+        } else if (memo_man == "remove") {
+            removecont(name& submitter, string& url)
             return;
         } else if (memo.size() <= 12) {
             domain = parse_url(parameter);
