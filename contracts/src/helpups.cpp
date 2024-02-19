@@ -155,14 +155,14 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
   check(receiver != ""_n, "We can't pay no one.");
 
   // --- Check that the contract is the receiver --- //
-  config_table _config(get_self(), get_self().value);
+  config_t _config(get_self(), get_self().value);
   check(_config.exists(), "Configuration must be set first. How did you even get here?");
   auto conf = _config.get();
 
   // Find the receiver records is in the _ious table
 
   // --- Get the IOUs --- //
-  ious_table _ious(get_self(), receiver.value);
+  ious_t _ious(get_self(), receiver.value);
   auto iou_itr = _ious.begin();
   check(iou_itr != _ious.end(), "You are all paid up. Send some Ups and come back");
   
@@ -228,7 +228,7 @@ void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<
       check(content_prov.exists(), "Register the domain to start adding content for upvotes");
 
       // --- Check if content already exists --- //
-        content_table contents(get_self(), get_self().value);
+        content_t contents(get_self(), get_self().value);
         auto gudhash = contents.get_index<"bygudahash"_n>();
         auto itr = gudhash.find(url_hash);
 
@@ -263,12 +263,12 @@ void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<
 
 
       // --- Check if templateid is valid --- //
-      templates_t templates_table(ATOMICASSETS_ACCOUNT, collection.value);
-      auto template_itr = templates_table.find(templateid);
-      check(template_itr != templates_table.end(), "Template does not exist");
+      templates_t templates_t(ATOMICASSETS_ACCOUNT, collection.value);
+      auto template_itr = templates_t.find(templateid);
+      check(template_itr != templates_t.end(), "Template does not exist");
 
-      // --- Check if NFT already exists in content_table --- //
-      content_table contents(get_self(), get_self().value);
+      // --- Check if NFT already exists in content_t --- //
+      content_t contents(get_self(), get_self().value);
       auto by_external_id_idx = contents.get_index<"byexternal"_n>(); // Assuming this is the secondary index for external_id
       auto nft_itr = by_external_id_idx.find(templateid);
       check(nft_itr == by_external_id_idx.end(), "NFT is already registered. Send Ups.");
@@ -281,8 +281,9 @@ void addcontent(name& submitter, vector<float> latlng = {0.0,0.0}, const vector<
         row.external_id = templateid; // --- Set external_id to templateid for NFTs
         row.gudahash = checksum256(); 
         row.created = current_time_point();
-        row.latlng = latlng;
-        row.tetra_loc = tetra_locode;
+        
+        //row.latlng = latlng;
+        //row.tetra_loc = tetra_locode;
       });
 
 
@@ -377,7 +378,7 @@ auto parse_url(const string& url, bool hash_whole = false, bool chopped_whole = 
 auto check_config(bool ignore_empty = false) // --- RETURNS false or config type
 {
     // --- Get config table --- //
-    config_table conf_tbl(get_self(), get_self().value);
+    config_t conf_tbl(get_self(), get_self().value);
 
     bool existencial = conf_tbl.exists();
 
