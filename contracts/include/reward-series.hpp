@@ -46,7 +46,7 @@
         } else if (seriesName == "HEXAGONAL") {
             return series::HEXAGONAL;
         } else {
-            return std::vector<uint64_t>();
+            return std::vector<uint32_t>();
         }
             
     }//END getSeries()
