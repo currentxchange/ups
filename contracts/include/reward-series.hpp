@@ -20,7 +20,7 @@
 
 
     // --- Return a Series --- //
-    vector<uint64_t> getSeries(const string& seriesName){
+    vector<uint32_t> getSeries(const string& seriesName){
         if (seriesName == "FIBONACCI") {
             return series::FIBONACCI;
         } else if (seriesName == "SILVER") {
