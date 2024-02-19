@@ -8,9 +8,8 @@
 #include <atomicdata.hpp>
 /*/
 
-using namespace eosio;
 using namespace std;
-using namespace atomicdata;
+using namespace eosio;
 
 class [[eosio::contract]] ups : public contract {
   
@@ -25,7 +24,7 @@ struct content_provider {
   uint64_t primary_key() const { return domain.value; }
 };
 
-typedef singleton<name("content_provider"), content_provider> content_provider_singleton;
+typedef singleton<name("contentprov"), content_provider> content_provider_singleton;
 
 /*/ --- SCOPED to name domain --- //
 Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by nation, .hpp in development), and postal code (if applicable, also in development)
@@ -38,7 +37,7 @@ Find the top content in each area by indexes provided.
 - Then read the totals table for the # of ups
 /*/
 
-TABLE content_table { // CHECK final decision to use bitshift or auto increment
+TABLE content_t { // CHECK final decision to use bitshift or auto increment
   uint64_t id;
   name domain;
   name submitter;
@@ -46,28 +45,28 @@ TABLE content_table { // CHECK final decision to use bitshift or auto increment
   uint32_t external_id;
   checksum256 gudahash;
   time_point_sec created;
-  vector<float> latlng({0.0,0.0});//CHECK I don't think this is how you set default values 
-  vector<uint32_t> tetra_loc({0,0});
+  vector<float> latlng();//{0.0,0.0}
+  vector<uint32_t> tetra_loc();//{0,0}
 
   uint64_t primary_key() const { return id; } //CHECK use this to return the bitshift
   uint64_t by_domain() const { return domain.value; } //CHECK if needed with scoping
-  uint64_t by_external_id() const { return domain.value; }
-  checksum256 by_gudahash() const { return (uint64_t) external_id; }
+  uint64_t by_external_id() const { return static_cast<uint64_t>(external_id); }
+  checksum256 by_gudahash() const { return gudahash; }
   uint64_t by_latitude() const { return static_cast<uint64_t>(latlng[0] * 10000); } 
   uint64_t by_longitude() const { return static_cast<uint64_t>(latlng[1] * 10000); }
-  uint64_t by_tetraloc1() const { return (uint64_t) (tetra_loc[0]); }
-  uint64_t by_tetraloc2() const { return (uint64_t) (tetra_loc[1]); }
+  uint64_t by_tetraloc1() const { return static_cast<uint64_t>(tetra_loc[0]); }
+  uint64_t by_tetraloc2() const { return static_cast<uint64_t>(tetra_loc[1]); }
 
 };
 
-using content_table_index = multi_index<name("content"), content_table,
-  indexed_by<"bydomain"_n, const_mem_fun<content_table, uint64_t, &content_table::by_domain>>,
-  indexed_by<"byextid"_n, const_mem_fun<content_table, uint64_t, &content_table::by_external_id>>,
-  indexed_by<"bygudahash"_n, const_mem_fun<content_table, checksum256, &content_table::by_gudahash>>,
-  indexed_by<"bylatitude"_n, const_mem_fun<content_table, uint64_t, &content_table::by_latitude>>,
-  indexed_by<"bylongitude"_n, const_mem_fun<content_table, uint64_t, &content_table::by_longitude>>,
-  indexed_by<"bytetra1"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc1>>,
-  indexed_by<"bytetra2"_n, const_mem_fun<content_table, uint64_t, &content_table::by_tetraloc2>>
+using content_t_index = multi_index<name("content"), content_t,
+  indexed_by<"bydomain"_n, const_mem_fun<content_t, uint64_t, &content_t::by_domain>>,
+  indexed_by<"byextid"_n, const_mem_fun<content_t, uint64_t, &content_t::by_external_id>>,
+  indexed_by<"bygudahash"_n, const_mem_fun<content_t, checksum256, &content_t::by_gudahash>>,
+  indexed_by<"bylatitude"_n, const_mem_fun<content_t, uint64_t, &content_t::by_latitude>>,
+  indexed_by<"bylongitude"_n, const_mem_fun<content_t, uint64_t, &content_t::by_longitude>>,
+  indexed_by<"bytetra1"_n, const_mem_fun<content_t, uint64_t, &content_t::by_tetraloc1>>,
+  indexed_by<"bytetra2"_n, const_mem_fun<content_t, uint64_t, &content_t::by_tetraloc2>>
 >;
 
 TABLE content_domain {
@@ -75,9 +74,9 @@ TABLE content_domain {
     name domain;
     uint64_t primary_key() const { return content_id; }
 };
-typedef singleton<name("contentdomain"), content_domain> content_domain_table;
+typedef singleton<name("contdomain"), content_domain> content_domain_t;
 
-  TABLE ups { 
+  TABLE ups_log { 
     uint64_t upid; 
     uint64_t content_id;
     uint32_t totalups; 
@@ -85,14 +84,14 @@ typedef singleton<name("contentdomain"), content_domain> content_domain_table;
   
     uint64_t primary_key() const { return upid; }
     uint64_t by_content_id() const { return content_id; }
-    uint64_t by_ups() const { return (uint64_t) totalups; }
-    uint64_t by_tuid() const { return (uint64_t) tuid; }
+    uint64_t by_ups() const { return static_cast<uint64_t>(totalups); }
+    uint64_t by_tuid() const { return static_cast<uint64_t>(tuid); }
   };
   
-  using ups_table = multi_index<name("ups"), ups,
-    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ups, uint64_t, &ups::by_content_id>>,
-    eosio::indexed_by<"byups"_n, eosio::const_mem_fun<ups, uint64_t, &ups::by_ups>>,
-    eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ups, uint64_t, &ups::by_tuid>>
+  using upslog_t = multi_index<name("upslog"), ups_log,
+    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_content_id>>,
+    eosio::indexed_by<"byups"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_ups>>,
+    eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_tuid>>
   >;
   
   TABLE totals {
@@ -103,7 +102,7 @@ typedef singleton<name("contentdomain"), content_domain> content_domain_table;
     uint64_t primary_key() const { return content_id; }
   };
   
-  using totals_table = multi_index<name("totals"), totals>;
+  using totals_t = multi_index<name("totals"), totals>;
   
   
   // --- Activity stats for uppers (For future awards) --- //
@@ -116,7 +115,7 @@ typedef singleton<name("contentdomain"), content_domain> content_domain_table;
     uint64_t primary_key() const { return upsender.value; }
   };
   
-  using uppers_table = multi_index<name("uppers"), uppers>;
+  using uppers_t = multi_index<name("uppers"), uppers>;
 
 
   // --- Store record of who to pay --- // 
@@ -135,13 +134,13 @@ typedef singleton<name("contentdomain"), content_domain> content_domain_table;
     uint64_t by_upcatcher() const { return upcatcher.value; }
     uint64_t by_upsender() const { return upsender.value; }
     uint64_t by_content_id() const { return content_id; }
-    uint64_t by_tuid() const { return (uint64_t) tuid; }
-    uint64_t by_upscount() const { return (uint64_t) upscount.sec_since_epoch(); }
-    uint64_t by_initiated() const { return (uint64_t) initiated.sec_since_epoch(); }
-    uint64_t by_updated() const { return (uint64_t) updated; }
+    uint64_t by_tuid() const { return static_cast<uint64_t>(tuid); }
+    uint64_t by_upscount() const { return static_cast<uint64_t>(upscount.sec_since_epoch()); }
+    uint64_t by_initiated() const { return static_cast<uint64_t>(initiated.sec_since_epoch()); }
+    uint64_t by_updated() const { return static_cast<uint64_t>(updated); }
   };
 
-  using ious_table = multi_index<name("ious"), ious,
+  using ious_t = multi_index<name("ious"), ious,
     eosio::indexed_by<"byupcatcher"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upcatcher>>,
     eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upsender>>,
     eosio::indexed_by<"byupscount"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upscount>>,
@@ -158,11 +157,11 @@ typedef singleton<name("contentdomain"), content_domain> content_domain_table;
     vector<name> purgatory; // Accounts in limbo due to partial deletions, call removeupper() to finish 
     vector<uint64_t> purg_content;
 
-    uint64_t primary_key() const { return (uint64_t) lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
+    uint64_t primary_key() const { return static_cast<uint64_t>lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
   };
   
-  typedef singleton<name("internallog"), internallog> internallog_table;
-  //using internallog_table = multi_index<name("internallog"), internallog>;
+  typedef singleton<name("internallog"), internallog> internallog_t;
+  //using internallog_t = multi_index<name("internallog"), internallog>;
 /*/--- Alternate location if other way isn't efficient
   TABLE location {
     uint64_t    id;            // Unique ID for each location
@@ -182,7 +181,7 @@ typedef singleton<name("contentdomain"), content_domain> content_domain_table;
   typedef eosio::multi_index<"locations"_n, location,
       indexed_by<"byintcode"_n, const_mem_fun<location, uint64_t, &location::by_int_code>>, // Index for int_code
       indexed_by<"bylevel"_n, const_mem_fun<location, uint64_t, &location::by_level>>
-  > locations_table;
+  > locations_t;
 
 /*/
 
@@ -200,24 +199,23 @@ typedef singleton<name("contentdomain"), content_domain> content_domain_table;
   };
 
   // --- Declare Config Singleton --- //
-  typedef singleton<name("config"), config> config_table;
+  typedef singleton<name("config"), config> config_t;
 
   private:  
 
   void upsertup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
-  void logup(uint32_t upscount name upsender, uint64_t content_id); 
-  void updateupper(uint32_t upscount name upsender);
+  void logup(uint32_t upscount, name upsender, uint64_t content_id); 
+  void updateupper(uint32_t upscount, name upsender);
   void removecontent(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
   void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
-  void addcontent(name& submitter, string& url, name domain = false, name collection = false, uint32_t templateid = false);
+  void addcontent(name& submitter, string& url, name domain, name collection, uint32_t templateid);
   
-  // --- Declare the _tables for later use --- // 
-  ious_table _ious;
-  ups_table _ups;
-  uppers_table _uppers;
-  totals_table _totals;
-  //internallog_table _internallog;
-  content_table _content;
+  // --- Declare the _ts for later use --- // 
+  ious_t _ious;
+  ups_log _ups;
+  uppers_t _uppers;
+  totals_t _totals;
+  content_t _content;
 
 
 
@@ -227,7 +225,7 @@ public:
   [[eosio::on_notify("*::transfer")]] // CHECK REQUIRES correct contract for SOL/BLUX Listens for any token transfer
   void up_catch( const name from, const name to, const asset quantity, const std::string memo );
   
-  ACTION payup(name upsender = false); // User's call to pay themselves
+  ACTION payup(name upsender); // User's call to pay themselves
 
   ACTION removeupper(name upsender);
   
@@ -244,3 +242,5 @@ public:
   ACTION pauserewards(bool pause);
 
   ACTION pauseups(bool pause);
+
+};//END contract ups

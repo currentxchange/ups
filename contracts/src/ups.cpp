@@ -1,6 +1,6 @@
 #include "ups.hpp"
 
-ACTION ups::payup(name upsender) {
+ACTION ups::payup(name upsender = false) {
     /*/ --- Require only the upsender to be able to claim rewards [Optional] --- //
     Commented out, action allows for anyone to call the action to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
     /*/
@@ -14,7 +14,7 @@ ACTION ups::payup(name upsender) {
 ACTION ups::updatecont(uint64_t content_id, float latitude = 0.0, float longitude = 0.0, uint32_t continent_subregion_code = 1, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_name = ""){
 
     // --- Get the content --- //
-    content_table contents(get_self(), get_self().value);
+    content_t contents(get_self(), get_self().value);
     auto itr = contents.find(content_id);
     check(itr != contents.end(), "Content with the specified ID does not exist.");
 
@@ -120,7 +120,7 @@ ACTION ups::addurl(vector<float> latlng = {0.0,0.0}, const vector<uint32_t>& tet
 //TODO WARN needs update to remove the up records
 ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint32_t template_id = 0) {
 
-    content_table contents(get_self(), get_self().value); // Access the content table
+    content_t contents(get_self(), get_self().value); // Access the content table
 
     // If content_id is provided, remove by content_id
     if (content_id != 0) {
@@ -157,7 +157,7 @@ ACTION ups::removeupper(name upsender) {
     check(has_auth(upsender) || has_auth(get_self()), "Only "+upsender.to_string()+" can reset their account"); // Ensure only the contract can call this action
 
     // --- Get the IOUs --- //
-    ious_table ious(get_self(), get_self().value);
+    ious_t ious(get_self(), get_self().value);
     auto upsender_idx = ious.get_index<"byupsender"_n>();
     auto upcatcher_idx = ious.get_index<"byupcatcher"_n>();
 
@@ -177,7 +177,7 @@ ACTION ups::removeupper(name upsender) {
     }
 
     // --- Get content where upsender is the submitter --- //
-    content_table contents(get_self(), get_self().value);
+    content_t contents(get_self(), get_self().value);
     auto submitter_idx = contents.get_index<"bysubmitter"_n>();
     auto submitter_itr = submitter_idx.lower_bound(upsender.value);
 
@@ -192,13 +192,13 @@ ACTION ups::removeupper(name upsender) {
     if (upsender_idx.lower_bound(upsender.value) == upsender_idx.end() && 
         upcatcher_idx.lower_bound(upsender.value) == upcatcher_idx.end()) {
         // Access the uppers table and remove the upsender
-        uppers_table uppers(get_self(), get_self().value);
+        uppers_t uppers(get_self(), get_self().value);
         auto upper_itr = uppers.find(upsender.value);
         if (upper_itr != uppers.end()) {
             uppers.erase(upper_itr);
         } else { // --- Add the user to Purgatory so oracle can remove them TODO add readme explanation about why this is needed
 
-            internallog_table internal_log(get_self(), get_self().value);
+            internallog_t internal_log(get_self(), get_self().value);
             check(internal_log.exists(), "");
 
             // Fetch the existing internal log record
@@ -221,7 +221,7 @@ ACTION ups::pauserewards(bool pause) {
     check(has_auth(get_self()), "Only contract owner can pause the rewards."); 
 
     // --- Access the config singleton --- //
-    config_table _config(get_self(), get_self().value); 
+    config_t _config(get_self(), get_self().value); 
 
     // --- Check if the config exists --- //
     check(_config.exists(), "Call setconfig() then come back.");
@@ -242,7 +242,7 @@ ACTION ups::pauseups(bool pause) {
     check(has_auth(get_self()), "Only contract owner can pause the Ups."); 
 
     // --- Access the config singleton --- //
-    config_table _config(get_self(), get_self().value); 
+    config_t _config(get_self(), get_self().value); 
 
     // --- Check if the config exists --- //
     check(_config.exists(), "Call setconfig() then come back.");
@@ -297,7 +297,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     _config.set(new_conf, get_self()); 
 
     // --- Set up the internal log --- //
-    internallog_table internlog(get_self(), get_self().value);
+    internallog_t internlog(get_self(), get_self().value);
     internallog internlog_data = internlog.get_or_default(internallog{//CHECK does this need to set a variable?
         .lastpay = current_time_point();
         .lastfullpay = current_time_point();
