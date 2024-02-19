@@ -1,7 +1,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
 #include <atomicassets-interface.hpp>
-#include <atomicassets-interface.hpp>
+#include <ups-web4.hpp>
 
 /*/
 #include <checkformat.hpp>
