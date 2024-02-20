@@ -139,7 +139,7 @@ ACTION ups::addnft(const name& submitter, double latitude = 0.0, double longitud
     addcontent(submitter, latitude, longitude, continent_subregion_code, country_code, continent_subregion_name, country_iso3, subdivision, postal_code, url, domain, collection, templateid);
 
     return;
-}//END addbft
+}//END addnft
 
 //TODO WARN needs update to remove the up records
 ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint32_t template_id = 0) {
@@ -346,7 +346,16 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
 
     name content_name; // --- To parse URL if needed 
-    bool force_reg_content = false;
+
+    string sanitized_memo;
+    for (char c : memo) {
+        if (c != ' ') {
+            sanitized_memo += c;
+        }
+    }
+
+    memo = sanitized_memo;
+    delete sanitized_memo;
 
     // --- Check for '|' in memo --- //
     size_t delimiter_pos = memo.find('|');
@@ -355,21 +364,31 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         string memo_man = memo.substr(0, delimiter_pos); // first part of URL
         string parameter = memo.substr(delimiter_pos + 1); // second part of URL
         name domain;
-        name content_name;
  
         // --- Call the function based on memo_man --- //
         if (memo_man == "up") {
-            if(parameter.size() <= 12){// --- Its a name of a content 
-                upsertup(up_quantity, from, Name.from(parameter), 0);
-            } else {// --- It's a URL
-                content_name = parse_url(parameter)
-                //TODO
-            }
+            // --- Send up using contentID --- //
+            uint64_t content_id;
+            check(content_id = std::stoull(parameter)), "Content ID is a number, send the memo as: up|<contentid> ");
+            upsertup(up_quantity, from, content_id, 0);
+
             return;
-        } else if (memo_man == "url" ||memo_man == "link" ) {
-            addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, content_name, ""_n, 0);
+        } else if (memo_man == "url" ||memo_man == "uplink" ) { 
+
+            upsertup_url(up_quantity, from, parameter);
             return;
-        } else if (memo_man == "nft") { // format nft|collection|tokenid  
+        } else if (memo_man == "nft" ||memo_man == "upnft" ) {
+            int32_t templateid;
+            check(templateid = std::stoul(parameter)), "Template ID is a number, send the memo as: upnft|<templateid> ");
+
+
+            upsertup_nft(up_quantity, from, templateid);
+
+            return;
+        } else if (memo_man == "addurl" ||memo_man == "link" ) {
+            addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
+            return;
+        } else if (memo_man == "addnft") { // format nft|collection|tokenid  
             delimiter_pos = parameter.find('|')
             check(delimiter_pos != string::npos, "Please send the memo as: nft|<collection>|<templateid> like ");
             //WARN could use more checks
@@ -380,12 +399,13 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 
             addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
             return;
-        } else if (memo.size() <= 12) {
+        } /*/else if (memo.size() <= 12) {
             domain = parse_url(parameter);
             // --- Check if content is registered in _content --- //
-        } else {
+
+        }/*/ else {
             // Handle unknown memo
-            check (0, "Unknown memo, send contentid or the url with up| or url| register/upvote or reg| to register");
+            check (0, "Unknown memo, send contentid with up| or url| register/upvote or reg| to register");
         }
     }
 

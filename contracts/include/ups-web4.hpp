@@ -1,6 +1,6 @@
 /*/
 
-    These are just the Web4 contants we are using
+    These are just the Web4 constants we are using
 
 /*/
 

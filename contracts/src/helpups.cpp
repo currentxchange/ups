@@ -8,13 +8,10 @@ This allows us to be more flexible with what constitutes an up:
 
 /*/// ---
 
-
-
 // --- DISPATCHER Checks + calls logup() updateiou() and updatetotal() --- //
-void upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative) {
+void upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative = 0) {
       require_auth( upsender );
     // --- Check content Id valid --- //
-
     if (!negative){
         // --- Log the ups in ups table --- // 
         upsert_logup(upscount, upsender, content_id, negative);
@@ -24,8 +21,53 @@ void upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negati
 
         //  --- Call action to update IOU table ----- //
         upsert_ious(upscount, upsender, content_id, false);
-    } //else call removal functions
+    } //TODO else call removal functions
 }//END upsertup()
+
+// --- ROUTER prepares and calls upsertup() --- //
+void upsertup_url(uint32_t upscount, name upsender, string url ) {
+    // Extract the domain name from the URL to use as scope for the content table
+    name domain = name{parse_url(url, 0, 0, 1)}; 
+
+    // Use the domain to scope the content table
+    content_t contents(get_self(), domain.value);
+
+    // --- Get the hash of the URL --- //
+    checksum256 url_hash = parse_url(url, 1,0,0); 
+
+    // Search for the content by its hash within the scoped content table
+    auto by_gudahash_index = contents.get_index<"bygudahash"_n>();
+    auto content_itr = by_gudahash_index.find(url_hash);
+    check(content_itr != by_gudahash_index.end(), "⚡️ Linked content not found. Please register the provider + content URL before sending ups.");
+
+    uint64_t content_id = content_itr->id;
+    upsertup(upscount, upsender, content_id, false);
+
+}//END upsertup_url()
+
+
+// --- ROUTER prepares and calls upsertup() --- //
+void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid) {
+
+
+  // --- Search for the domain (NFT collection) in the content_domain table using templateid -- //
+  content_domain_t content_domain_singleton(get_self(), templateid);
+  eosio::check(content_domain_singleton.exists(), "Template ID not found in content_domain");
+  auto get_collection = content_domain_singleton.get();
+  name collection = content_domain_singleton.domain;
+
+  // --- Ensure collection matches for correct contentid --- //
+  content_t content_tbl(get_self(), get_self().value);
+  auto by_external_id_idx = content_tbl.get_index<"byexternal"_n>();
+  auto content_itr = by_external_id_idx.find(templateid);
+  eosio::check(content_itr != by_external_id_idx.end() && content_itr->domain == collection, "NFT content not found or collection mismatch");
+
+  // Pass the content_id to upsertup to update the ups
+  upsertup(upscount, upsender, content_itr->id, 0);
+
+}//END upsertup_nft()
+
+
 
 // --- Update running log of ups --- // TODO update to this contract
 void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative){
@@ -202,17 +244,9 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
 }//END pay_iou()
 
 
-
-void removecontent(uint64_t content_id) {
-
-  // delete from totals table, ups table, ious table NOTE currently in action not here, pass a 1 arg to the upsert's final parameter
-    
-}//END removecont()
-
 // --- Handles adding both NFT content and URL content --- // TODO add to the new content_domain singleton
 void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0)
 { 
-
     // --- Check if submitter is in providers table --- //
     require_auth(submitter): 
 
@@ -257,7 +291,7 @@ void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, 
 
         check(itr == gudhash.end(), "Content already exists, you can sends ups now");
 
-        // Insert new content
+        // --- Insert NFT into content table -- //
         contents.emplace(submitter, [&](auto& row) {
             row.id = contents.available_primary_key();
             row.domain = domain;
@@ -279,13 +313,13 @@ void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, 
       content_provider_singleton content_prov(get_self(), nft_collection.value);
 
       // --- Ensure the collection is not already registered --- //
-      check(content_prov.exists(), "This collection is not registered. Call regnftcol first.");
+      check(content_prov.exists(), "This collection is not registered. Use regnftcol first.");
 
 
       // --- Check if templateid is valid --- //
-      templates_t templates_t(ATOMICASSETS_ACCOUNT, collection.value);
-      auto template_itr = templates_t.find(templateid);
-      check(template_itr != templates_t.end(), "Template does not exist");
+      atomicassets::templates_t templates_tbl(ATOMICASSETS_ACCOUNT, collection.value); /// CHECK mangled, should be 
+      auto template_itr = templates_tbl.find(templateid);
+      check(template_itr != templates_tbl.end(), "Template does not exist");
 
       // --- Check if NFT already exists in content_t --- //
       content_t contents(get_self(), get_self().value);
@@ -309,11 +343,16 @@ void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, 
         row.postal_code = postal_code;
       });
 
+      // --- Insert NFT into content_domain table (needed later for simple upvotes) -- //
+      content_domain_t content_domain_singleton(get_self(), templateid); // Scope by template ID
+      eosio::check(!content_domain_singleton.exists(), "Template ID already exists in content_domain.");
+      content_domain domain_entry = {collection}; // Assuming content_domain struct has a 'domain' field for collection name
+      content_domain_singleton.set(domain_entry, submitter); // Set with the authority of the submitter
+
 
     } else {
-      check(false, "This is not a valid URL or NFT");
+      check(0, "This is not a valid URL or NFT");
     }
-
     // dont forget : row.id = _ups.available_primary_key();
 }
 
@@ -398,7 +437,7 @@ auto parse_url(const string& url, bool hash_whole = false, bool chopped_whole = 
 }//END parse_url()
 
 // --- Gets config object and ensures contract not paused --- //
-auto check_config(bool ignore_empty = false) // --- RETURNS false or config type
+auto check_config(bool ignore_empty = 0) // --- RETURNS false or config type
 {
     // --- Get config table --- //
     config_t conf_tbl(get_self(), get_self().value);
@@ -409,7 +448,7 @@ auto check_config(bool ignore_empty = false) // --- RETURNS false or config type
     check(existencial || ignore_empty, "⚡️ An administrator needs to set up this contract before you can use it.");
 
     // --- Return a blank object or the config object --- //
-    if (!existencial){
+    if (existencial){
         const auto& conf = conf_tbl.get();
 
         // --- If both rewards and ups are paused, no go, shut down everything --- //
@@ -417,7 +456,7 @@ auto check_config(bool ignore_empty = false) // --- RETURNS false or config type
 
         return conf;
 
-    } else return false; // --- Returns only when ignore empty is set to avoid check. 
+    } else return 0; // --- Returns only when ignore empty is set to avoid check. 
 }
 
 // --- Check if user is authorized on NFT collection --- //

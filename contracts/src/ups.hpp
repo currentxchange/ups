@@ -32,8 +32,7 @@ Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (IS
 --- Curation of content by location ----
 Find the top content in each area by indexes provided.
 - Init table scoped to name domain e.g. youtube
-- Use index for a location by_tetraloc2 for country e.g. COL
-- Returns all the content for Colombia
+- Use index for a location, like country
 - Then read the totals table for the # of ups
 /*/
 
@@ -222,9 +221,6 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   uppers_t _uppers;
   totals_t _totals;
   content_t _content;
-
-
-
   
 public:
   
