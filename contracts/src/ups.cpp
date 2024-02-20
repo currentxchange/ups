@@ -62,8 +62,8 @@ ACTION ups::regdomain(const name& submitter, const string& url, const vector<uin
     check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name as the submitter.")
 
     // ---- Get a name from the URL --- //
-    name domain_parsed = parse_url(url);
-    name domain_chopped = parse_url(url, 0, 0, 1);
+    name domain_parsed = url_domain_name(url);
+    string domain_chopped = chopped_url(url);
 
     // ---- Check if domain is already registered --- //
     content_provider_singleton content_prov(get_self(), domain_parsed.value);
@@ -297,7 +297,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     check ((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
 
 
-    if (old_conf && old_conf.timeunit != timeunit){
+    if (old_conf /*/!= std::nullopt/*/ && old_conf.timeunit != timeunit){
         // --- Can't change time unit after ups have been made as it's used for reward calculations --- //
         _ups(get_self(), self().value);
         bool dundidit = (_ups.begin() != _ups.end());

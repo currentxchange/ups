@@ -1,7 +1,11 @@
 #include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
+#include <eosio/crypto.hpp>
 #include <atomicassets-interface.hpp>
 #include <ups-web4.hpp>
+
+#include <cctype>
+
 
 /*/
 #include <checkformat.hpp>
@@ -215,17 +219,22 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   void updateupper(uint32_t upscount, name upsender);
   void removecontent(uint64_t content_id);
   void addcontent(name submitter, string url, name domain, name collection, uint32_t templateid);
-  void upsertup_url(uint32_t upscount, name upsender, string url);
+  void upsertup_url(uint32_t upscount, name upsender, string& url);
   void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid);
-  void upsert_logup(uint32_t upscount, name upsender, uint64_t content_id, bool negative);
+  void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
   void upsert_total(uint32_t upscount, name upsender, uint64_t content_id, bool negative);
   void upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract);
   void pay_iou(uint32_t maxpay, name receiver, bool paythem);
 
   // --- Functions that help the helper functions --- //
   uint32_t find_tu(uint32_t momentuin, uint32_t tu_length);
-  auto parse_url(const string& url, bool hash_whole, bool chopped_whole, bool chopped_domain);
-  auto check_config(bool ignore_empty);
+  uint32_t find_tu(uint32_t tu_length);
+  //auto parse_url(const string& url, bool hash_whole, bool chopped_whole, bool chopped_domain);
+  string chopped_url(string& url);
+  checksum256 url_hash(string& url);
+  name url_domain_name(string& url);
+  //auto check_config(bool ignore_empty);
+  std::optional<config> check_config(bool ignore_empty);
   bool isAuthorized(name collection, name user);
   string normalize_enum_name(const std::string& input);
   uint32_t is_valid_continent_subregion(uint32_t code, const std::string& name);
@@ -235,7 +244,7 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
 
   // --- Declare the _ts for later use --- // 
   ious_t _ious;
-  ups_log _ups;
+  upslog_t _ups;
   uppers_t _uppers;
   totals_t _totals;
   content_t _content;
