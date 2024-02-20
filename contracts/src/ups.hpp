@@ -19,7 +19,7 @@ public:
 struct content_provider {
   name domain;
   string raw_domain;
-  vector<uint32_t> tetra_loc; // --- Requires web4 headers {Continent_Subregions M49, Nation Alpha 3, Subdivision e.g. state, Postal code}
+  uint32_t country; // codes from ISO 3166 alpha-3
 
   uint64_t primary_key() const { return domain.value; }
 };
@@ -27,12 +27,12 @@ struct content_provider {
 typedef singleton<name("contentprov"), content_provider> content_provider_singleton;
 
 /*/ --- SCOPED to name domain --- //
-Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by nation, .hpp in development), and postal code (if applicable, also in development)
+Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by country, .hpp in development), and postal code (if applicable, also in development)
 | Option | Double insertion into anothr scope allow for global cu
 --- Curation of content by location ----
 Find the top content in each area by indexes provided.
 - Init table scoped to name domain e.g. youtube
-- Use index for a location by_tetraloc2 for nation e.g. COL
+- Use index for a location by_tetraloc2 for country e.g. COL
 - Returns all the content for Colombia
 - Then read the totals table for the # of ups
 /*/
@@ -45,10 +45,10 @@ TABLE content {
   uint32_t external_id;
   checksum256 gudahash;
   time_point_sec created;
-  uint32_t latitude; // stored as the decimal value to .0000 * 10000
-  uint32_t longitude;
+  int32_t latitude; // stored as the decimal value to .0000 * 10000
+  int32_t longitude;
   uint32_t subcontinent; // codes from M49
-  uint32_t nation; // codes from ISO 3166 alpha-3
+  uint32_t country; // codes from ISO 3166 alpha-3
   uint32_t subdivision;
   uint32_t postal_code;
 
@@ -57,7 +57,7 @@ TABLE content {
   uint64_t by_external_id() const { return static_cast<uint64_t>(external_id); }
   checksum256 by_gudahash() const { return gudahash; }
   uint64_t by_subcontinent() const { return static_cast<uint64_t>(subcontinent); }
-  uint64_t by_nation() const { return static_cast<uint64_t>(nation); }
+  uint64_t by_country() const { return static_cast<uint64_t>(country); }
   uint64_t by_subdivision() const { return static_cast<uint64_t>(subdivision); }
   uint64_t by_postal_code() const { return static_cast<uint64_t>(postal_code); }
   uint64_t by_lat_lng() const { return (uint64_t{latitude} << 32) | longitude; }
@@ -69,7 +69,7 @@ using content_t = multi_index<"content"_n, content,
   indexed_by<"byextid"_n, const_mem_fun<content, uint64_t, &content::by_external_id>>,
   indexed_by<"bygudahash"_n, const_mem_fun<content, checksum256, &content::by_gudahash>>,
   indexed_by<"bysubconteni"_n, const_mem_fun<content, uint64_t, &content::by_subcontinent>>,
-  indexed_by<"bynation"_n, const_mem_fun<content, uint64_t, &content::by_nation>>,
+  indexed_by<"bycountry"_n, const_mem_fun<content, uint64_t, &content::by_country>>,
   indexed_by<"bysubdiv"_n, const_mem_fun<content, uint64_t, &content::by_subdivision>>,
   indexed_by<"bypostalcode"_n, const_mem_fun<content, uint64_t, &content::by_postal_code>>,
   indexed_by<"bylatlng"_n, const_mem_fun<content, uint64_t, &content::by_lat_lng>>

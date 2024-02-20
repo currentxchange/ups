@@ -4,48 +4,53 @@ ACTION ups::payup(name upsender = false) {
     /*/ --- Require only the upsender to be able to claim rewards [Optional] --- //
     Commented out, action allows for anyone to call the action to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
     /*/
-
     //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
     // --- Send to the payment dispatcher --- //
     pay_iou(0, upsender);
     
 }
 
-ACTION ups::updatecont(uint64_t content_id, float latitude = 0.0, float longitude = 0.0, uint32_t continent_subregion_code = 1, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_name = ""){
+ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0){
+
+    check((has_auth(itr->submitter) || has_auth(get_self())) , "⚡️ Only the submitter "+ itr->submitter.to_string() +" can update content.")
 
     // --- Get the content --- //
     content_t contents(get_self(), get_self().value);
     auto itr = contents.find(content_id);
-    check(itr != contents.end(), "Content with the specified ID does not exist.");
+    check(itr != contents.end(), "⚡️ Content with the specified ID does not exist.");
 
-    check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter "+ itr->submitter.to_string() +" or the contract can update content.")
+    uint32_t subcontinent = 0;
+    uint32_t country = 0;
+    int32_t latitude_int = 0;
+    int32_t longitude_int = 0;
 
     // --- Validate and format Latitude and Longitude --- //
     if (latitude == 0.0 && longitude == 0.0){
-        auto formatted_coords = validate_and_format_coords({latitude, longitude});
-        latitude = formatted_coords[0];
-        longitude = formatted_coords[1];
+        vector<int32_t> formatted_coords = validate_and_format_coords({latitude, longitude});
+        latitude_int = formatted_coords[0];
+        longitude_int = formatted_coords[1];
     }
 
     // --- Validate the Continent Subregion as a string or an int --- //
-    if (!continent_subregion_name.empty()) {
-        check(is_valid_continent_subregion(0, continent_subregion_name), "Invalid continent subregion name.");
-    } else {
-        check(is_valid_continent_subregion(continent_subregion_code), "Invalid continent subregion code.");
-    }
+    if (!continent_subregion_name.empty() || continent_subregion_code != 0) {
+        subcontinent = is_valid_continent_subregion(continent_subregion_code, continent_subregion_name);
+    } 
 
     // --- Validate the country as a string or an int --- //
-    if (!country_name.empty()) {
-        check(is_valid_country(0, country_name), "Invalid country name.");
-    } else {
-        check(is_valid_country(country_code), "Invalid country code.");
-    }
+    if (!country_name.empty() || country_code != 0) {
+        country = is_valid_country(country_code, country_name);
+    } 
 
     // --- Update the content record --- //
     contents.modify(itr, get_self(), [&](auto& row) {
-        row.latlng = {latitude, longitude};
-        row.tetra_loc = {continent_subregion, country};
+        row.latitude = (latitude_int != 0) ? latitude : row.latitude; // CHANGE and see if it compiles 
+        row.longitude = (longitude_int != 0) ? longitude : row.longitude;
+        row.subcontinent = (subcontinent != 0) ? subcontinent : row.subcontinent;
+        row.country = (nation != 0) ? nation : row.nation;
+        row.subdivision = (subdivision != 0) ? subdivision : row.subdivision;
+        row.postal_code = (postal_code != 0) ? postal_code : row.postal_code;
     });
+
 }//END updatecont()
 
 
@@ -65,7 +70,7 @@ ACTION ups::regdomain(const name& submitter, const string& url, const vector<uin
     // ---- Register new content provider --- //
     content_provider prov_data;
     prov_data.domain = domain_parsed;    
-    prov_data.tetra_locode = tetra_locode;
+
     prov_data.raw_domain = domain_chopped;
 
     // Save the content provider information
@@ -82,13 +87,15 @@ ACTION ups::configdomain(const name& submitter, const string& url, const name& u
 }
 /*///---
 
-ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0}) {
+ACTION ups::regnftcol(const name& submitter, const name& nft_collection, string& country) {
     // --- Check if collection exists + user is authorized  --- //
     check(has_auth(submitter), "The content submitter must sign."); 
     auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
 
     // --- Require collection owners to register collection --- //
     //check(isAuthorized(nft_collection, submitter), "Submitter is not authorized for this collection.");
+
+    check(is_valid_country()
 
     // --- Check the providers table --- //
     content_provider_singleton content_prov(get_self(), nft_collection.value);
@@ -100,22 +107,39 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, const v
     content_provider new_provider
     new_provider.domain = nft_collection,
     new_provider.raw_domain = nft_collection.to_string(),
-    new_provider.tetra_loc = tetra_locode
+    new_provider.country = country
 
     content_prov.set(new_provider, submitter); // --- Submitter pays to register
 }
 
-ACTION ups::addurl(vector<float> latlng = {0.0,0.0}, const vector<uint32_t>& tetra_locode = {0, 0}, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0) { 
-    // --- Access the config singleton --- //
+ACTION ups::addurl(const name& submitter, const string& url, const name& domain, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0) { 
+    
+    name collection = ""_n;
+    uint32_t templateid = 0;
     auto conf = check_config();
 
-    check(has_auth(submitter), "This is only for the contract, add URLs by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+"with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+    // --- Uncomment to allow free registration of content --- //
+    check(/*/has_auth(submitter) || /*/has_auth(get_self())), "Add linked content by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
 
     // --- Call dispatcher function --- // 
-    addcontent(get_self(), latlng, tetra_locode, url, domain, collection, templateid);
+    addcontent(submitter, latitude, longitude, continent_subregion_code, country_code, continent_subregion_name, country_iso3, subdivision, postal_code, url, domain, collection, templateid);
 
     return;
 }//END addurl
+
+ACTION ups::addnft(const name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const name& collection = ""_n, const uint32_t& templateid = 0) { 
+    string url = ""; 
+    name domain = ""_n; 
+    auto conf = check_config();
+    
+    // --- Uncomment to allow free registration of content --- //
+    check(/*/has_auth(submitter) || /*/has_auth(get_self())), "Add NFTs to be ranked by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+
+    // --- Call dispatcher function --- // 
+    addcontent(submitter, latitude, longitude, continent_subregion_code, country_code, continent_subregion_name, country_iso3, subdivision, postal_code, url, domain, collection, templateid);
+
+    return;
+}//END addbft
 
 //TODO WARN needs update to remove the up records
 ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint32_t template_id = 0) {
@@ -154,7 +178,7 @@ ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint3
 
 // WARN must add checks to payment actions to avoid paying ""_n
 ACTION ups::removeupper(name upsender) {
-    check(has_auth(upsender) || has_auth(get_self()), "Only "+upsender.to_string()+" can reset their account"); // Ensure only the contract can call this action
+    check(has_auth(upsender) || has_auth(get_self()), "Only "+upsender.to_string()+" can reset their account"); // Ensure only the contract can call this action 
 
     // --- Get the IOUs --- //
     ious_t ious(get_self(), get_self().value);
@@ -196,7 +220,7 @@ ACTION ups::removeupper(name upsender) {
         auto upper_itr = uppers.find(upsender.value);
         if (upper_itr != uppers.end()) {
             uppers.erase(upper_itr);
-        } else { // --- Add the user to Purgatory so oracle can remove them TODO add readme explanation about why this is needed
+        } else { // --- Add the user to Purgatory so oracle can remove them TODO add readme explacountry about why this is needed
 
             internallog_t internal_log(get_self(), get_self().value);
             check(internal_log.exists(), "");
