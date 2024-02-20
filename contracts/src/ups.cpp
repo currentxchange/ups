@@ -351,42 +351,38 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     // --- Check for '|' in memo --- //
     size_t delimiter_pos = memo.find('|');
     if (delimiter_pos != string::npos) {
-        // --- Split memo into function name and parameter
-        string memo_man = memo.substr(0, delimiter_pos);
-        string parameter = memo.substr(delimiter_pos + 1);
+        // --- Split memo into function name and parameter --- //
+        string memo_man = memo.substr(0, delimiter_pos); // first part of URL
+        string parameter = memo.substr(delimiter_pos + 1); // second part of URL
         name domain;
         name content_name;
  
         // --- Call the function based on memo_man --- //
         if (memo_man == "up") {
-            if(parameter.size() <= 12){// --- Its a name
+            if(parameter.size() <= 12){// --- Its a name of a content 
                 upsertup(up_quantity, from, Name.from(parameter), 0);
             } else {// --- It's a URL
                 content_name = parse_url(parameter)
                 //TODO
             }
             return;
-        } else if (memo_man == "reg") {
-            addcontent(name& submitter, string& url)
+        } else if (memo_man == "url" ||memo_man == "link" ) {
+            addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, content_name, ""_n, 0);
             return;
-        } else if (memo_man == "remove") {
-            removecont(name& submitter, string& url)
+        } else if (memo_man == "nft") { // format nft|collection|tokenid  
+            delimiter_pos = parameter.find('|')
+            check(delimiter_pos != string::npos, "Please send the memo as: nft|<collection>|<templateid> like ");
+            //WARN could use more checks
+            // --- Split memo into collection name and template id --- //
+            name collection = name(parameter.substr(0, delimiter_pos)); // first part of URL
+            uint32_t templateid;
+           check(templateid = static_cast<uint32_t>(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|collection|templateid") ; // second part of URL
+
+            addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
             return;
         } else if (memo.size() <= 12) {
             domain = parse_url(parameter);
             // --- Check if content is registered in _content --- //
-
-        } else if (memo_man == "url") {
-        /*/ --- TODO
-        
-        Accept a dynamic name that represents a domain
-        youtub20hfbv|https://www.youtube.com/watch?v=dQw4w9Wg
-        or a collection and a template 
-        collection|templateid
-
-        /*/// ---
-
-            return;
         } else {
             // Handle unknown memo
             check (0, "Unknown memo, send contentid or the url with up| or url| register/upvote or reg| to register");
