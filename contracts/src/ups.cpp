@@ -1,6 +1,8 @@
 #include "ups.hpp"
+#include "helpups.cpp"
 
-ACTION ups::payup(name upsender = false) {
+
+ACTION ups::payup(name upsender = ""_n) {
     /*/ --- Require only the upsender to be able to claim rewards [Optional] --- //
     Commented out, action allows for anyone to call the action to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
     /*/

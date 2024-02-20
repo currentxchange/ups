@@ -8,32 +8,40 @@ This allows us to be more flexible with what constitutes an up:
 
 /*/// ---
 
+
 // --- DISPATCHER Checks + calls logup() updateiou() and updatetotal() --- //
-void upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative = 0) {
+void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative = 0) {
       require_auth( upsender );
     // --- Check content Id valid --- //
     if (!negative){
         // --- Log the ups in ups table --- // 
-        upsert_logup(upscount, upsender, content_id, negative);
+        ups::upsert_logup(upscount, upsender, content_id, negative);
         
         // --- Calls action to update the TOTALS table -- //
-        upsert_total(upscount, upsender, content_id, negative);
+        ups::upsert_total(upscount, upsender, content_id, negative);
 
         //  --- Call action to update IOU table ----- //
-        upsert_ious(upscount, upsender, content_id, false);
+        ups::upsert_ious(upscount, upsender, content_id, false);
     } //TODO else call removal functions
 }//END upsertup()
 
 // --- ROUTER prepares and calls upsertup() --- //
-void upsertup_url(uint32_t upscount, name upsender, string url ) {
+void ups::upsertup_url(uint32_t upscount, name upsender, string url ) {
     // Extract the domain name from the URL to use as scope for the content table
-    name domain = name{parse_url(url, 0, 0, 1)}; 
+    //inline auto get_domain = parse_url(url, 0, 0, 1); 
+    string domain = static_cast<string>(parse_url(url, 0, 0, 1));
+    //delete get_domain;
+    
 
     // Use the domain to scope the content table
     content_t contents(get_self(), domain.value);
 
     // --- Get the hash of the URL --- //
-    checksum256 url_hash = parse_url(url, 1,0,0); 
+    auto get_url_hash = parse_url(url,1); 
+    checksum256 url_hash = static_cast<checksum256>(get_url_hash);
+    delete get_url_hash;
+
+    //auto parse_url(const string& url) -> checksum256;
 
     // Search for the content by its hash within the scoped content table
     auto by_gudahash_index = contents.get_index<"bygudahash"_n>();
@@ -47,8 +55,7 @@ void upsertup_url(uint32_t upscount, name upsender, string url ) {
 
 
 // --- ROUTER prepares and calls upsertup() --- //
-void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid) {
-
+void ups::upsertup_nft(uint32_t upscount, name upsender, int32_t templateid) {
 
   // --- Search for the domain (NFT collection) in the content_domain table using templateid -- //
   content_domain_t content_domain_singleton(get_self(), templateid);
@@ -67,10 +74,8 @@ void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid) {
 
 }//END upsertup_nft()
 
-
-
 // --- Update running log of ups --- // TODO update to this contract
-void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative){
+void ups::upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative){
   //NOTE negative should only be called for deletions (user gets removed from system)
 
   // --- Add record to _ups --- //
@@ -378,7 +383,7 @@ uint32_t find_tu(uint32_t tu_length = 0){
 }
 
 // --- Returns Name from Domain or url checksum256 if whole thang --- //
-auto parse_url(const string& url, bool hash_whole = false, bool chopped_whole = false, bool chopped_domain = false) const { 
+ACTION auto parse_url(const string& url, bool hash_whole = false, bool chopped_whole = false, bool chopped_domain = false) const { 
     // Find the start position after "://"
     auto start = url.find("://");
     if (start != string::npos) {

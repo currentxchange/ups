@@ -6,6 +6,8 @@
 /*/
 #include <checkformat.hpp>
 #include <atomicdata.hpp>
+
+eosio-cpp -I eosio -I ../include -abigen -o ups.wasm ups.cpp --no-missing-ricardian-clause
 /*/
 
 using namespace std;
@@ -140,9 +142,9 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
     uint64_t by_upsender() const { return upsender.value; }
     uint64_t by_content_id() const { return content_id; }
     uint64_t by_tuid() const { return static_cast<uint64_t>(tuid); }
-    uint64_t by_upscount() const { return static_cast<uint64_t>(upscount.sec_since_epoch()); }
+    uint64_t by_upscount() const { return static_cast<uint64_t>(upscount); }
     uint64_t by_initiated() const { return static_cast<uint64_t>(initiated.sec_since_epoch()); }
-    uint64_t by_updated() const { return static_cast<uint64_t>(updated); }
+    uint64_t by_updated() const { return static_cast<uint64_t>(updated.sec_since_epoch()); }
   };
 
   using ious_t = multi_index<name("ious"), ious,
@@ -162,7 +164,7 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
     vector<name> purgatory; // Accounts in limbo due to partial deletions, call removeupper() to finish 
     vector<uint64_t> purg_content;
 
-    uint64_t primary_key() const { return static_cast<uint64_t>lastpay; } //WARN CHECK if this is singleton (it isn't, fix it)
+    uint64_t primary_key() const { return static_cast<uint64_t>(lastpay.sec_since_epoch()); } //WARN CHECK if this is singleton (it isn't, fix it)
   };
   
   typedef singleton<name("internallog"), internallog> internallog_t;
@@ -205,16 +207,32 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
 
   // --- Declare Config Singleton --- //
   typedef singleton<name("config"), config> config_t;
+ 
 
-  private:  
-
-  void upsertup(uint32_t upscount, name upsender, uint64_t content_id); //DISPATCHER
-  void logup(uint32_t upscount, name upsender, uint64_t content_id); 
+  // --- Helper Functions --- //
+  void upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative);
+  void logup(uint32_t upscount, name upsender, uint64_t content_id);
   void updateupper(uint32_t upscount, name upsender);
-  void removecontent(uint64_t content_id); // Removes all IOUs for nft + nft record (minimal)
-  void deepremvcont(uint64_t content_id); // Removes all records of Ups for this content  
-  void addcontent(name& submitter, string& url, name domain, name collection, uint32_t templateid);
-  
+  void removecontent(uint64_t content_id);
+  void addcontent(name submitter, string url, name domain, name collection, uint32_t templateid);
+  void upsertup_url(uint32_t upscount, name upsender, string url);
+  void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid);
+  void upsert_logup(uint32_t upscount, name upsender, uint64_t content_id, bool negative);
+  void upsert_total(uint32_t upscount, name upsender, uint64_t content_id, bool negative);
+  void upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract);
+  void pay_iou(uint32_t maxpay, name receiver, bool paythem);
+
+  // --- Functions that help the helper functions --- //
+  uint32_t find_tu(uint32_t momentuin, uint32_t tu_length);
+  auto parse_url(const string& url, bool hash_whole, bool chopped_whole, bool chopped_domain);
+  auto check_config(bool ignore_empty);
+  bool isAuthorized(name collection, name user);
+  string normalize_enum_name(const std::string& input);
+  uint32_t is_valid_continent_subregion(uint32_t code, const std::string& name);
+  uint32_t is_valid_country(uint32_t code, const std::string& name);
+  vector<int32_t> validate_and_format_coords(const vector<double>& coords);
+
+
   // --- Declare the _ts for later use --- // 
   ious_t _ious;
   ups_log _ups;
@@ -222,7 +240,7 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   totals_t _totals;
   content_t _content;
   
-public:
+
   
   [[eosio::on_notify("*::transfer")]] // CHECK REQUIRES correct contract for SOL/BLUX Listens for any token transfer
   void up_catch( const name from, const name to, const asset quantity, const std::string memo );
