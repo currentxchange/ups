@@ -208,6 +208,8 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
       asset one_reward_amount;
       double reward_multiplier;
       uint32_t timeunit;
+      bool pay_submitter;
+      bool pay_upsender;
       bool paused_rewards;
       bool paused_ups;
   };
@@ -264,6 +266,8 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   ACTION updatecont(uint64_t content_id);
 
   ACTION regdomain(const name& submitter, const string& url);
+
+  ACTION setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier, uint32_t timeunit);
 
   //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 

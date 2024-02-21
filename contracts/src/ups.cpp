@@ -284,7 +284,7 @@ ACTION ups::pauseups(bool pause) {
 }
 
 // --- Action to set configuration --- //
-ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, double reward_multiplier, uint32_t timeunit) {
+ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier, uint32_t timeunit) {
     // --- Ensure the action is authorized by the contract itself --- //
     check(has_auth(get_self()), "Only contract owner can set the config"); 
 
@@ -316,6 +316,8 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     new_conf.one_reward_amount = one_reward_amount; // --- Keep this in mind if planning rewards + inflatioon
     new.conf.reward_multiplier = 1.0; // --- Increase or decrease rewards per time unit without destabalizing relationship. WARN may mean claims get paif current rate without calc of change tim 
     new_conf.timeunit = timeunit; // This cannot change once  Ups are made. 
+    new_conf.pay_submitter = true;
+    new_conf.pay_upsender = true;
     new_conf.paused_rewards = false; // --- Defaults to not be paused
     new_conf.paused_ups = false;
 

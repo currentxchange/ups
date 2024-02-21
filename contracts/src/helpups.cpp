@@ -177,9 +177,12 @@ void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, boo
 
   check(has_auth(get_self()), "Only the contract can modify the ious table. ");//CHECK true??
 
+  //TODO this should get the reciever name as sumbitter from the content table
+
   // --- Add record to _ups --- // 
-  _ious(get_self(), get_self().value); 
-  auto ious_itr = _ious.find(iouid); 
+  ious_t _ious(get_self(), get_self().value); 
+    //TODO this should use an index to find the iou by content_id and upsender, and see if the upsender has a vote in the same timeunit
+  auto ious_itr = _ious.find(content_id); //UPDATE
   uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
   uint32_t timeunit = find_tu(time_of_up);
   if( ious_itr == _ups.end())
