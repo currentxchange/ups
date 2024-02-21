@@ -17,7 +17,7 @@ This allows us to be more flexible with what constitutes an up:
 void ups::upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative = 0) {
       require_auth( upsender );
     // --- Check content Id valid --- //
-    if (!negative){
+    if (!negative){// TODO remove this + test
         // --- Log the ups in ups table --- // 
         ups::upsert_logup(upscount, upsender, content_id, negative);
         
@@ -80,47 +80,54 @@ void ups::upsertup_nft(uint32_t upscount, name upsender, int32_t templateid) {
 void ups::upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative){
   //NOTE negative should only be called for deletions (user gets removed from system)
 
+  uint32_t now_tu = find_tu(eosio::current_time_point().sec_since_epoch());
+
   // --- Add record to _ups --- //
-  _ups(get_self(), content_id); //WARN CHECK - is content_id right here? URGENT I really think this is wrong for all upserts
-  auto ups_iterator = _ups.find(upid);
-  uint32_t time_of_up = eosio::time_point_sec::sec_since_epoch();
-  if( ups_iterator == _ups.end() )
+  upslog_t _ups(get_self(), get_self().value);
+  auto by_content_id_idx = _ups.get_index<"bycontentid"_n>();
+  auto ups_itr = by_content_id_idx.lower_bound(content_id);
+
+
+//TODO let user cancel their up befote timeunit expires, just action that calls this function with negative flag
+//TODO double-check we are updating the other totals table
+  // Iterate through entries to find a match with upsender and now_tu
+  bool found_up = false;
+  for (; ups_itr != by_content_id_idx.end(); ++ups_itr) {
+      if (ups_itr->upsender == upsender && ups_itr->tuid == now_tu) {
+          // Matching entry found, update its totalups
+          by_content_id_idx.modify(ups_itr, eosio::same_payer, [&](auto& row) {
+              row.totalups = negative ? row.totalups - upscount : row.totalups + upscount;
+          });
+          found_up = true;
+          break; // Exit the function after updating
+      }
+  }
+
+  if( !found_up )
   { // -- Make New Record
-    _ups.emplace(upsender, [&]( auto& row ) {//URGENT This needs to be changed when we figure out the PK issue
+    _ups.emplace(upsender, [&]( auto& row ) {
       row.upid = _ups.available_primary_key();
-      row.totalups = newups;
-      row.tuid = momentu;
+      row.content_id = content_id;
+      row.totalups = upscount;
+      row.tuid = now_tu;
     });
   } 
-  else 
-  { // -- Update Record
-    if (negative){
-      _ups.modify(ups_iterator, upsender, [&]( auto& row ) {//URGENT This needs to be changed when we figure out the PK issue
-          row.totalups -= newups;
-      });
-    } else {
-      _ups.modify(ups_iterator, upsender, [&]( auto& row ) {//URGENT This needs to be changed when we figure out the PK issue
-          row.totalups += newups;
-      });
-    }
 
-    
-  }//END if(results _ups) 
 }
 
 // --- Upsert _uppers and _totals --- // TODO update to this contract
-void ups::upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id, bool negative) {
+void ups::upsert_total(uint32_t upscount, name upsender, uint32_t content_id, bool negative) {
 
 
   // --- Update / Insert _totals record of cumulative song Ups --- //
-  _totals(get_self(), content_id);
+  totals_t _totals(get_self(), content_id);
   auto total_iterator = _totals.find(content_id);
-  uint32_t time_of_up = eosio::time_point_sec::sec_since_epoch();
+  uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
   if( total_iterator == _totals.end() )
   { // -- Make New Record
     _totals.emplace(upsender, [&]( auto& row ) {
       row.key = content_id;
-      row.totalups = newups;
+      row.totalups = upscount;
       row.updated = time_of_up;
     });
   } 
@@ -129,13 +136,13 @@ void ups::upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id,
     if(!negative){
       _totals.modify(total_iterator, upsender, [&]( auto& row ) {
         row.key = content_id;
-        row.totalups += newups;
+        row.totalups += upscount;
         row.updated = time_of_up;
       });
     } else { // Subtract the value from totals
       _totals.modify(total_iterator, upsender, [&]( auto& row ) {
         row.key = content_id;
-        row.totalups -= newups;
+        row.totalups -= upscount;
         row.updated = time_of_up;
       });
     }
@@ -144,7 +151,7 @@ void ups::upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id,
   }//END if(results _totals)
 
   // --- Update / Insert _uppers record --- //
-  _uppers(get_self(), content_id);
+  uppers_t _uppers(get_self(), content_id);
   auto listener_iterator = _uppers.find(content_id);
   if( listener_iterator == _uppers.end() )
   {
@@ -152,29 +159,29 @@ void ups::upsert_total(uint32_t &upscount, name &upsender, uint32_t &content_id,
       row.upsender = upsender;
       row.firstup = time_of_up;
       row.lastup = time_of_up;
-      row.totalups = newups;
+      row.totalups = upscount;
     });
   } 
   else 
   {
     _uppers.modify(listener_iterator, upsender, [&]( auto& row ) {
-      row.lastup = time_point_sec::sec_since_epoch();
-      row.totalups += newups;
+      row.lastup = eosio::current_time_point().sec_since_epoch();
+      row.totalups += upscount;
     });
   }//END if(results _uppers)
 }//END upsert_total()
 
 // --- Upsert IOUs --- //
-void ups::upsert_ious(uint32_t upscount, name &upsender, uint64_t content_id, bool subtract){
+void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract){
   //CHECK Not using any auth, double check we already did that 
 
-  check(has_auth(get_self()), "Only the contract can modify the ious table. ")
+  check(has_auth(get_self()), "Only the contract can modify the ious table. ");//CHECK true??
 
   // --- Add record to _ups --- // 
   _ious(get_self(), get_self().value); 
   auto ious_itr = _ious.find(iouid); 
-  uint32_t time_of_up = time_point_sec::sec_since_epoch();
-  uint32_t = find_tu();
+  uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
+  uint32_t timeunit = find_tu(time_of_up);
   if( ious_itr == _ups.end())
   { // -- Make New Record
     _ious.emplace(upsender, [&]( auto& row ) {
@@ -306,7 +313,7 @@ void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, 
             row.link = url_chopped;
             row.external_id = 0;
             row.gudahash = url_hash;
-            row.created = time_point_sec::sec_since_epoch();
+            row.created = eosio::current_time_point().sec_since_epoch();
             row.latitude = latitude_int; // CHANGE and see if it compiles 
             row.longitude = longitude_int;
             row.subcontinent = (subcontinent != 0) ? subcontinent : 1;

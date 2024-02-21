@@ -90,17 +90,20 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   TABLE ups_log { 
     uint64_t upid; 
     uint64_t content_id;
+    name upsender;
     uint32_t totalups; 
     uint32_t tuid;
   
     uint64_t primary_key() const { return upid; }
     uint64_t by_content_id() const { return content_id; }
+    uint64_t by_upsender() const { return upsender.value; } 
     uint64_t by_ups() const { return static_cast<uint64_t>(totalups); }
     uint64_t by_tuid() const { return static_cast<uint64_t>(tuid); }
   };
   
   using upslog_t = multi_index<name("upslog"), ups_log,
     eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_content_id>>,
+      eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_upsender>>,
     eosio::indexed_by<"byups"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_ups>>,
     eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_tuid>>
   >;
@@ -222,7 +225,7 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   void upsertup_url(uint32_t upscount, name upsender, string& url);
   void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid);
   void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
-  void upsert_total(uint32_t upscount, name upsender, uint64_t content_id, bool negative);
+  void upsert_total(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
   void upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract);
   void pay_iou(uint32_t maxpay, name receiver, bool paythem);
 
