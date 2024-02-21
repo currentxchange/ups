@@ -146,8 +146,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint32_t content_id, bo
         row.updated = time_of_up;
       });
     }
-    
-    
+
   }//END if(results _totals)
 
   // --- Update / Insert _uppers record --- //
@@ -165,63 +164,80 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint32_t content_id, bo
   else 
   {
     _uppers.modify(listener_iterator, upsender, [&]( auto& row ) {
-      row.lastup = eosio::current_time_point().sec_since_epoch();
+      row.lastup = time_of_up;
       row.totalups += upscount;
     });
   }//END if(results _uppers)
 }//END upsert_total()
 
 // --- Upsert IOUs --- //
-void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract){
-  //CHECK Not using any auth, double check we already did that 
+void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract) {
+    //require_auth(get_self()); //CHECK this would make it fail unless we call it?
 
-  check(has_auth(get_self()), "Only the contract can modify the ious table. ");//CHECK true??
+    // --- Access the config table and ensure rewards are happening --- //
+    config conf = check_config(); 
+    if (!conf.pay_submitter && !conf.pay_upsender){return;}
 
-  //TODO this should get the reciever name as sumbitter from the content table
+    // --- Find submitter name to pay them --- //
+    content_t _contents(get_self(), get_self().value);
+    auto content_itr = _contents.find(content_id);
+    eosio::check(content_itr != _contents.end(), "Content not found");
+    name submitter = content_itr->submitter;
 
-  // --- Add record to _ups --- // 
-  ious_t _ious(get_self(), get_self().value); 
-    //TODO this should use an index to find the iou by content_id and upsender, and see if the upsender has a vote in the same timeunit
-  auto ious_itr = _ious.find(content_id); //UPDATE
-  uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
-  uint32_t timeunit = find_tu(time_of_up);
-  if( ious_itr == _ups.end())
-  { // -- Make New Record
-    _ious.emplace(upsender, [&]( auto& row ) {
-      row.key = _ious.available_primary_key(); 
-      row.upsender = upsender;
-      row.content_id = content_id;
-      row.tuid = timeunit;
-      row.upcatcher = artistacc;
-      row.upscount = upscount;
-      row.initialized = time_of_up;
-      row.updated = time_of_up;
-    });
-  } 
-  else 
-  { // -- Update Record
-    _ious.modify(ious_itr, upsender, [&]( auto& row ) {
-      row.upscount += upscount;
-      row.upstype = upstype;// Can be from SOL -> BIGSOL
-      row.updated = time_of_up;
-    });
-  }//END if(results _ups)
+    // --- Find current time unit --- //
+    uint32_t current_time = eosio::current_time_point().sec_since_epoch();
+
+    // --- Upsert IOU for a given receiver and sender --- //
+      auto upsert_iou = [&](name receiver, bool subtract) {
+        ious_t _ious(get_self(), receiver.value);
+        auto iou_idx = _ious.get_index<"bycontentid"_n>();
+        auto iou_itr = iou_idx.lower_bound(content_id);
+
+        if (iou_itr != iou_idx.end()) {
+            // Found matching IOU record, update it
+            iou_idx.modify(iou_itr, get_self(), [&](auto& row) {
+                row.upscount = subtract ? row.upscount - upscount : row.upscount + upscount;
+                row.updated = current_time;
+            });
+            return;
+        }
+        // --- Insert new IOU --- //
+        if (!subtract) {
+            _ious.emplace(get_self(), [&](auto& row) {
+                row.iouid = _ious.available_primary_key();
+                row.content_id = content_id;
+                row.upcatcher = receiver;
+                row.upscount = upscount;
+                row.initiated = current_time;
+                row.updated = current_time;
+            });
+        }
+    };//END lambda
+
+    // --- Pay the good people --- //
+    if (conf.pay_submitter) {
+        upsert_iou(submitter, subtract);
+    }
+    if (conf.pay_upsender && submitter != upsender) {
+        upsert_iou(upsender, subtract);
+    }
+
 }//END upsert_ious()
 
+
 // --- Send the beautiful people their tokens  --- //
-void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
+void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem = true){
 
   check(receiver != ""_n, "We can't pay no one.");
 
-  // --- Check that the contract is the receiver --- //
-  config_t _config(get_self(), get_self().value);
-  check(_config.exists(), "Configuration must be set first. How did you even get here?");
-  auto conf = _config.get();
+  // --- Check that the rewards aren't paused --- //
+  config conf = check_config();
+  check(!conf.paused_rewards, "⚡️ Rewards are currently paused. Check back later.");
 
   // Find the receiver records is in the _ious table
 
   // --- Get the IOUs --- //
-  ious_t _ious(get_self(), receiver.value);
+  ious_t _ious(get_self(), receiver.value); 
   auto iou_itr = _ious.begin();
   check(iou_itr != _ious.end(), "You are all paid up. Send some Ups and come back");
   
@@ -229,16 +245,25 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
   uint32_t paid = 0;
   std::vector<uint64_t> ious_to_erase;
 
+  uint32_t records_processed = 0;
   // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
-  while(iou_itr != _ious.end() && (maxpay == 0 || paid < maxpay) && records_processed <= 12){
-    auto& iou = iou_itr;
-    paid += iou.upscount; 
-    ious_to_erase.push_back(iou.iouid); // Track IOU IDs for deletion
+  while(iou_itr != _ious.end() && records_processed <= maxpayments){
+    paid += iou_itr->upscount; 
+    ious_to_erase.push_back(iou_itr->iouid); // Track IOU IDs for deletion
     iou_itr++;
   }
 
-    // Calculate the total amount to be paid
-    asset total_payment = conf.one_reward_amount.amount * paid;
+    // --- Calculate the total reward amount --- //
+    asset total_payment = conf.one_reward_amount;
+    total_payment *= paid * (conf.reward_multiplier_percent / 100);
+
+      // --- Erase paid IOUs from the table --- //
+  for(auto& iouid: ious_to_erase){
+    auto itr = _ious.find(iouid);
+    if(itr != _ious.end()){
+        _ious.erase(itr);
+    }
+  }
 
   // --- Pay the people --- //
   if(total_payment.amount > 0 && paythem){
@@ -251,18 +276,12 @@ void pay_iou(uint32_t maxpay = 0, name& receiver, bool paythem = true){
     ).send();
   }
 
-  // --- Erase paid IOUs from the table --- //
-  for(auto& iouid: ious_to_erase){
-    auto itr = _ious.find(iouid);
-    if(itr != _ious.end()){
-        _ious.erase(itr);
-    }
-  }
+
 }//END pay_iou()
 
 
 // --- Handles adding both NFT content and URL content --- // TODO add to the new content_domain singleton
-void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0)
+void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const std::string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0)
 { 
     // --- Check if submitter is in providers table --- //
     require_auth(submitter);
@@ -287,14 +306,14 @@ void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, 
     } 
 
     // --- Validate the country as a string or an int --- //
-    if (!country_name.empty() || country_code != 0) {
-        country = is_valid_country(country_code, country_name);
+    if (!country_iso3.empty() || country_code != 0) {
+        country = is_valid_country(country_code, country_iso3);
     } 
     
     // --- Handle URL --- //
     if ( !is_nft && url != "" ) {
       name domain = url_domain_name(url);
-      hash url_hash = url_hash(url);
+      checksum256 new_hash = url_hash(url);
       string url_chopped = chopped_url(url);
 
       // --- Check if domain is registered --- //
@@ -304,7 +323,7 @@ void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, 
       // --- Check if content already exists --- //
         content_t contents(get_self(), get_self().value);
         auto gudhash = contents.get_index<"bygudahash"_n>();
-        auto itr = gudhash.find(url_hash);
+        auto itr = gudhash.find(new_hash);
 
         check(itr == gudhash.end(), "Content already exists, you can sends ups now");
 
@@ -315,13 +334,13 @@ void addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, 
             row.submitter = submitter;
             row.link = url_chopped;
             row.external_id = 0;
-            row.gudahash = url_hash;
+            row.gudahash = new_hash;
             row.created = eosio::current_time_point().sec_since_epoch();
             row.latitude = latitude_int; // CHANGE and see if it compiles 
             row.longitude = longitude_int;
-            row.subcontinent = (subcontinent != 0) ? subcontinent : 1;
+            row.subcontinent = (subcontinent != 0) ? subcontinent : 1;//Default to made-up world subcontinent
             row.country = country;
-            row.subdivision = subdivision
+            row.subdivision = subdivision;
             row.postal_code = postal_code;
 
     } else if ( is_nft ) {

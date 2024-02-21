@@ -138,17 +138,13 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   TABLE ious {
     uint64_t iouid;
     uint64_t content_id;
-    uint32_t tuid;
-    name upsender;
     name upcatcher;
     uint32_t upscount;
     time_point_sec initiated;
     time_point_sec updated; 
     uint64_t primary_key() const { return iouid; }
     uint64_t by_upcatcher() const { return upcatcher.value; }
-    uint64_t by_upsender() const { return upsender.value; }
     uint64_t by_content_id() const { return content_id; }
-    uint64_t by_tuid() const { return static_cast<uint64_t>(tuid); }
     uint64_t by_upscount() const { return static_cast<uint64_t>(upscount); }
     uint64_t by_initiated() const { return static_cast<uint64_t>(initiated.sec_since_epoch()); }
     uint64_t by_updated() const { return static_cast<uint64_t>(updated.sec_since_epoch()); }
@@ -156,10 +152,8 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
 
   using ious_t = multi_index<name("ious"), ious,
     eosio::indexed_by<"byupcatcher"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upcatcher>>,
-    eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upsender>>,
     eosio::indexed_by<"byupscount"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upscount>>,
     eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_content_id>>,
-    eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_tuid>>,
     eosio::indexed_by<"byinitiated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_initiated>>,
     eosio::indexed_by<"byupdated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_updated>>
   >;
@@ -176,28 +170,7 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   
   typedef singleton<name("internallog"), internallog> internallog_t;
   //using internallog_t = multi_index<name("internallog"), internallog>;
-/*/--- Alternate location if other way isn't efficient
-  TABLE location {
-    uint64_t    id;            // Unique ID for each location
-    uint32_t    int_code;      // Integer code for the location
-    string      iso_alpha3;    // ISO Alpha-3 code
-    string      iso_alpha2;    // ISO Alpha-2 code
-    string      location_name; // Name of the location
-    uint32_t    level;         // Level of location (e.g., country, state)
 
-    uint64_t primary_key() const { return id; }
-    uint64_t by_int_code() const { return int_code; } // Secondary index for int_code
-    uint64_t by_level() const { return level; }
-
-    EOSLIB_SERIALIZE(location, (id)(int_code)(iso_alpha3)(iso_alpha2)(location_name)(level))
-  };
-
-  typedef eosio::multi_index<"locations"_n, location,
-      indexed_by<"byintcode"_n, const_mem_fun<location, uint64_t, &location::by_int_code>>, // Index for int_code
-      indexed_by<"bylevel"_n, const_mem_fun<location, uint64_t, &location::by_level>>
-  > locations_t;
-
-/*/
 
   TABLE config {
       name up_token_contract;
@@ -206,7 +179,7 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
       symbol reward_token_symbol;
       asset one_up_amount;
       asset one_reward_amount;
-      double reward_multiplier;
+      uint32_t reward_multiplier_percent;
       uint32_t timeunit;
       bool pay_submitter;
       bool pay_upsender;
@@ -223,22 +196,22 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
   void logup(uint32_t upscount, name upsender, uint64_t content_id);
   void updateupper(uint32_t upscount, name upsender);
   void removecontent(uint64_t content_id);
-  void addcontent(name submitter, string url, name domain, name collection, uint32_t templateid);
+  void addcontent(name& submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, uint32_t templateid);
   void upsertup_url(uint32_t upscount, name upsender, string& url);
   void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid);
   void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
   void upsert_total(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
   void upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract);
-  void pay_iou(uint32_t maxpay, name receiver, bool paythem);
+  void pay_iou(uint32_t maxpayments, name receiver, bool paythem);
 
   // --- Functions that help the helper functions --- //
   uint32_t find_tu(uint32_t momentuin, uint32_t tu_length);
   uint32_t find_tu(uint32_t tu_length);
   //auto parse_url(const string& url, bool hash_whole, bool chopped_whole, bool chopped_domain);
-  string chopped_url(string& url);
-  checksum256 url_hash(string& url);
-  name url_domain_name(string& url);
-  //auto check_config(bool ignore_empty);
+  string chopped_url(const std::string& url);
+  checksum256 url_hash(const std::string& url);
+  name url_domain_name(const std::string& url);
+  config check_config();
   std::optional<config> check_config(bool ignore_empty);
   bool isAuthorized(name collection, name user);
   string normalize_enum_name(const std::string& input);
@@ -267,7 +240,7 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
 
   ACTION regdomain(const name& submitter, const string& url);
 
-  ACTION setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier, uint32_t timeunit);
+  ACTION setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier_percent, uint32_t timeunit);
 
   //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 

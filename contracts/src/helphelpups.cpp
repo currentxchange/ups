@@ -1,6 +1,6 @@
 
-/*/ --- Gets config object and ensures contract not paused --- //
-auto ups::check_config(bool ignore_empty = 0) // --- RETURNS false or config type
+// --- Gets config object and ensures contract not paused --- //
+ups::config ups::check_config() // --- RETURNS false or config type
 {
     // --- Get config table --- //
     config_t conf_tbl(get_self(), get_self().value);
@@ -8,38 +8,18 @@ auto ups::check_config(bool ignore_empty = 0) // --- RETURNS false or config typ
     bool existencial = conf_tbl.exists();
 
     // --- Ensure the rewards are set up --- //
-    check(existencial || ignore_empty, "⚡️ An administrator needs to set up this contract before you can use it.");
+    check(existencial, "⚡️ An administrator needs to set up this contract before you can use it.");
 
     // --- Return a blank object or the config object --- //
-    if (existencial){
-        const auto& conf = conf_tbl.get();
 
-        // --- If both rewards and ups are paused, no go, shut down everything --- //
-        check(!(conf.paused_rewards && !conf.paused_ups), "⚡️ Rewards and Ups are both currently frozen. Check back later.");
+    const auto& conf = conf_tbl.get();
 
-        return conf;
+    // --- If both rewards and ups are paused, no go, shut down everything --- //
+    check(!(conf.paused_rewards && !conf.paused_ups), "⚡️ Rewards and Ups are both currently paused. Check back later.");
 
-    } else {
-        return 0; // --- Returns only when ignore empty is set to avoid check. 
-    }
+    return conf;
 }
-*/
 
-
-std::optional<ups::config> ups::check_config(bool ignore_empty = 0) {
-    config_t conf_tbl(get_self(), get_self().value);
-    bool existencial = conf_tbl.exists();
-
-    check(existencial || ignore_empty, "⚡️ An administrator needs to set up this contract before you can use it.");
-
-    if (existencial) {
-        const auto& conf = conf_tbl.get();
-        check(!(conf.paused_rewards && conf.paused_ups), "⚡️ Rewards and Ups are both currently frozen. Check back later.");
-        return conf;
-    } else {
-        return std::nullopt; // Returns an empty optional to indicate absence
-    }
-}
 
 
 // --- Returns the current Time Unit --- //
@@ -52,8 +32,8 @@ uint32_t ups::find_tu(uint32_t momentuin, uint32_t tu_length){
 // --- Returns the current Time Unit --- //
 uint32_t ups::find_tu(uint32_t tu_length = 0){
   if (!tu_length){
-    auto conf = check_config();
-    tu_length = conf->timeunit;
+    config conf = ups::check_config();
+    tu_length = conf.timeunit;
   }
   uint32_t momentuin = eosio::current_time_point().sec_since_epoch();
   uint32_t time_unit = floor(momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
@@ -122,13 +102,14 @@ auto ups::parse_url(const string& url, bool hash_whole = false, bool chopped_who
 
 /*/
 
-checksum256 ups::url_hash(string& url) {
-    url = chopped_url(url);
-    return eosio::sha256(url.data(), url.size());
+checksum256 ups::url_hash(const std::string& url) {
+
+    string newurl = chopped_url(url);
+    return eosio::sha256(newurl.data(), newurl.size());
 }
 
 // --- Returns URL after removing the protocol part and "www." --- //
-string ups::chopped_url(string& url) {
+string ups::chopped_url(const std::string& url) {
     auto start = url.find("://");
     if (start != std::string::npos) {
         start += 3; // Move past "://"
@@ -145,7 +126,7 @@ string ups::chopped_url(string& url) {
 }
 
 // --- Returns just the domain part of the URL as a name --- //
-name ups::url_domain_name(string& url) {
+name ups::url_domain_name(const std::string& url) {
 
     string domain_main = chopped_url(url);
     auto end = domain_main.find('/');

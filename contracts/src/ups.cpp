@@ -118,7 +118,7 @@ ACTION ups::addurl(const name& submitter, const string& url, const name& domain,
     
     name collection = ""_n;
     uint32_t templateid = 0;
-    auto conf = check_config();
+    ups::config conf = check_config();
 
     // --- Uncomment to allow free registration of content --- //
     check(/*/has_auth(submitter) || /*/has_auth(get_self())), "Add linked content by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
@@ -132,7 +132,7 @@ ACTION ups::addurl(const name& submitter, const string& url, const name& domain,
 ACTION ups::addnft(const name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const name& collection = ""_n, const uint32_t& templateid = 0) { 
     string url = ""; 
     name domain = ""_n; 
-    auto conf = check_config();
+    config conf = check_config();
     
     // --- Uncomment to allow free registration of content --- //
     check(/*/has_auth(submitter) || /*/has_auth(get_self())), "Add NFTs to be ranked by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
@@ -253,7 +253,7 @@ ACTION ups::pauserewards(bool pause) {
     check(_config.exists(), "Call setconfig() then come back.");
 
     // --- Get the existing config --- //
-    auto conf = _config.get();
+    ups::config conf = _config.get();
 
     // --- Update the paused_rewards status --- //
     conf.paused_rewards = pause;
@@ -274,7 +274,7 @@ ACTION ups::pauseups(bool pause) {
     check(_config.exists(), "Call setconfig() then come back.");
 
     // --- Get the existing config --- //
-    auto conf = _config.get();
+    ups::config conf = _config.get();
 
     // --- Update the paused_ups status --- //
     conf.paused_ups = pause;
@@ -284,28 +284,36 @@ ACTION ups::pauseups(bool pause) {
 }
 
 // --- Action to set configuration --- //
-ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier, uint32_t timeunit) {
+ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier_percent, uint32_t timeunit) {
     // --- Ensure the action is authorized by the contract itself --- //
     check(has_auth(get_self()), "Only contract owner can set the config"); 
 
     // --- Access the config singleton --- //
-    config old_conf = check_config(true);
+    config_t conf_tbl(get_self(), get_self().value);
+    bool existencial = conf_tbl.exists();
+
+
 
       // --- Token Checks --- //
     check(reward_token_symbol.is_valid() && up_token_symbol.is_valid(), "Invalid token symbol");
-    check(one_up_amount.amount > 0 && one_reward_amount.amount > 0, "Quantity must be positive");
+    check(one_up_amount.amount > 0 && one_reward_amount.amount > 0, "Quantity of reward and up must be positive, you can pause rewards for 0 by calling pauserewards");
     check ((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
 
 
-    if (old_conf /*/!= std::nullopt/*/ && old_conf.timeunit != timeunit){
-        // --- Can't change time unit after ups have been made as it's used for reward calculations --- //
-        _ups(get_self(), self().value);
-        bool dundidit = (_ups.begin() != _ups.end());
-        check (!dundidit, "You cannot adjust the timeunit after Ups have been made. Whoops.")
+    if (existencial){
+        config& old_conf = conf_tbl.get();
+        if (old_conf.timeunit != timeunit){
+            // --- Can't change time unit after ups have been made as it's used for reward calculations --- //
+            _ups(get_self(), self().value);
+            bool dundidit = (_ups.begin() != _ups.end());
+            check (!dundidit, "You cannot adjust the timeunit after Ups have been made. Whoops.");
+        }
     }
 
     // --- Create new config object --- //
     config new_conf;
+
+    //OPTIONAL we could set default values, but small benefit to only 1 person
 
     // --- Set new configuration values --- //
     new_conf.up_token_contract = up_token_contract;
@@ -314,10 +322,10 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     new_conf.reward_token_symbol = reward_token_symbol;
     new_conf.one_up_amount = one_up_amount; // --- One up and one reward are linked to one unit of time per user
     new_conf.one_reward_amount = one_reward_amount; // --- Keep this in mind if planning rewards + inflatioon
-    new.conf.reward_multiplier = 1.0; // --- Increase or decrease rewards per time unit without destabalizing relationship. WARN may mean claims get paif current rate without calc of change tim 
+    new.conf.reward_multiplier_percent = 100; // --- Increase or decrease rewards per time unit without destabalizing relationship. WARN may mean claims get paif current rate without calc of change tim 
     new_conf.timeunit = timeunit; // This cannot change once  Ups are made. 
-    new_conf.pay_submitter = true;
-    new_conf.pay_upsender = true;
+    new_conf.pay_submitter = pay_submitter;
+    new_conf.pay_upsender = pay_upsender;
     new_conf.paused_rewards = false; // --- Defaults to not be paused
     new_conf.paused_ups = false;
 
