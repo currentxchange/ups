@@ -49,7 +49,7 @@ TABLE content {
   string link;
   uint32_t external_id;
   checksum256 gudahash;
-  time_point_sec created;
+  uint32_t created;
   int32_t latitude; // stored as the decimal value to .0000 * 10000
   int32_t longitude;
   uint32_t subcontinent; // codes from M49
@@ -108,7 +108,7 @@ using content_t = multi_index<"content"_n, content,
   TABLE totals {
     uint64_t content_id;
     uint32_t totalups; 
-    time_point_sec updated;
+    uint32_t updated;
     
     uint64_t primary_key() const { return content_id; }
   };
@@ -119,8 +119,8 @@ using content_t = multi_index<"content"_n, content,
   // --- Activity stats for uppers (For future awards) --- //
   TABLE uppers {
     name upsender;
-    time_point_sec firstup;
-    time_point_sec lastup;
+    uint32_t firstup;
+    uint32_t lastup;
     uint32_t totalups;
     uint32_t claimable; //TODO ensure this is reflected in the totals 
     uint64_t primary_key() const { return upsender.value; }
@@ -137,14 +137,14 @@ using content_t = multi_index<"content"_n, content,
     uint64_t content_id;
     name upcatcher;
     uint32_t upscount;
-    time_point_sec initiated;
-    time_point_sec updated; 
+    uint32_t initiated;
+    uint32_t updated; 
     uint64_t primary_key() const { return iouid; }
     uint64_t by_upcatcher() const { return upcatcher.value; }
     uint64_t by_content_id() const { return content_id; }
     uint64_t by_upscount() const { return static_cast<uint64_t>(upscount); }
-    uint64_t by_initiated() const { return static_cast<uint64_t>(initiated.sec_since_epoch()); }
-    uint64_t by_updated() const { return static_cast<uint64_t>(updated.sec_since_epoch()); }
+    uint64_t by_initiated() const { return static_cast<uint64_t>(initiated); }
+    uint64_t by_updated() const { return static_cast<uint64_t>(updated); }
   };
 
   using ious_t = multi_index<name("ious"), ious,
@@ -157,12 +157,12 @@ using content_t = multi_index<"content"_n, content,
 
   
   TABLE internallog { // track Macro statistics for each token 
-    time_point_sec lastpay; // Last time the payment was called for all 
-    time_point_sec lastfullpay; 
+    uint32_t lastpay; // Last time the payment was called for all 
+    uint32_t lastfullpay; 
     vector<name> purgatory; // Accounts in limbo due to partial deletions, call removeupper() to finish 
     vector<uint64_t> purg_content;
 
-    uint64_t primary_key() const { return static_cast<uint64_t>(lastpay.sec_since_epoch()); } //WARN CHECK if this is singleton (it isn't, fix it)
+    uint64_t primary_key() const { return static_cast<uint64_t>(lastpay); } //WARN CHECK if this is singleton (it isn't, fix it)
   };
   
   typedef singleton<name("internallog"), internallog> internallog_t;
