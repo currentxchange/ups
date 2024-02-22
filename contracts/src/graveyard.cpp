@@ -1,3 +1,13 @@
+TABLE content_domain {
+    uint64_t content_id;
+    name domain;
+    uint64_t primary_key() const { return content_id; }
+};
+typedef singleton<name("contdomain"), content_domain> content_domain_t;
+
+
+
+
   TABLE config {
       name vote_token_contract = name("bluxbluxblux");
       symbol vote_token_symbol = symbol(symbol_code("BLUX"), 0);
@@ -9,6 +19,12 @@
   };
 
   typedef singleton<name("config"), config> config_t;
+
+
+
+
+
+
 
 
 Decided its fine, anyone can add the collection if they pay for the RAM

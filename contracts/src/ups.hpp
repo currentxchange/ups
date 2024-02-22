@@ -79,12 +79,7 @@ using content_t = multi_index<"content"_n, content,
   indexed_by<"bylatlng"_n, const_mem_fun<content, uint64_t, &content::by_lat_lng>>
 >;
 
-TABLE content_domain {
-    uint64_t content_id;
-    name domain;
-    uint64_t primary_key() const { return content_id; }
-};
-typedef singleton<name("contdomain"), content_domain> content_domain_t;
+
 
   TABLE ups_log { 
     uint64_t upid; 
