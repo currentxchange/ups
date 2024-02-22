@@ -317,7 +317,7 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
       string url_chopped = chopped_url(url);
 
       // --- Check if domain is registered --- //
-      content_provider_singleton content_prov(get_self(), domain_parsed.value);
+      content_provider_singleton content_prov(get_self(), domain.value);
       check(content_prov.exists(), "Register the domain to start adding content for upvotes");
 
       // --- Check if content already exists --- //
@@ -325,7 +325,7 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
         auto gudhash = contents.get_index<"bygudahash"_n>();
         auto itr = gudhash.find(new_hash);
 
-        check(itr == gudhash.end(), "Content already exists, you can sends ups now");
+        check(itr == gudhash.end(), "Content exists, send Ups now");
 
         // --- Insert NFT into content table -- //
         contents.emplace(submitter, [&](auto& row) {
@@ -342,18 +342,19 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
             row.country = country;
             row.subdivision = subdivision;
             row.postal_code = postal_code;
+        });
 
     } else if ( is_nft ) {
       // --- Handle NFT --- //
       // --- Check the providers table --- //
-      content_provider_singleton content_prov(get_self(), nft_collection.value);
+      content_provider_singleton content_prov(get_self(), template);
 
       // --- Ensure the collection is not already registered --- //
       check(content_prov.exists(), "This collection is not registered. Use regnftcol first.");
 
 
       // --- Check if templateid is valid --- //
-      atomicassets::templates_t templates_tbl(ATOMICASSETS_ACCOUNT, collection.value); /// CHECK mangled, should be 
+      atomicassets::templates_t templates_tbl(atomicassets::ATOMICASSETS_ACCOUNT, collection.value); /// CHECK mangled, should be 
       auto template_itr = templates_tbl.find(templateid);
       check(template_itr != templates_tbl.end(), "Template does not exist");
 

@@ -76,7 +76,7 @@ ACTION ups::regdomain(const name& submitter, const string& url, const vector<uin
     prov_data.raw_domain = domain_chopped;
 
     // Save the content provider information
-    content_prov.set(prov_data, get_self());
+    content_prov.set(prov_data, submitter);
 }
 
 /*/----
@@ -191,12 +191,6 @@ ACTION ups::removeupper(name upsender) {
     auto upcatcher_itr = upcatcher_idx.lower_bound(upsender.value);
     int count = 0;
 
-    while (upsender_itr != upsender_idx.end() && upsender_itr->upsender == upsender && count < 36) {
-        upsender_itr = upsender_idx.erase(upsender_itr);
-        count++;
-    }
-
-    count = 0; 
     while (upcatcher_itr != upcatcher_idx.end() && upcatcher_itr->upcatcher == upsender && count < 36) {
         upcatcher_itr = upcatcher_idx.erase(upcatcher_itr);
         count++;
