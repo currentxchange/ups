@@ -57,19 +57,16 @@ void ups::upsertup_url(uint32_t upscount, name upsender, string& url ) {
 
 
 // --- ROUTER prepares and calls upsertup() --- //
-void ups::upsertup_nft(uint32_t upscount, name upsender, int32_t templateid) {
+void ups::upsertup_nft(uint32_t upscount, name upsender, name collection, int32_t templateid) {
 
   // --- Search for the domain (NFT collection) in the content_domain table using templateid -- //
-  content_domain_t content_domain_singleton(get_self(), templateid);
-  eosio::check(content_domain_singleton.exists(), "Template ID not found in content_domain");
-  auto get_collection = content_domain_singleton.get();
-  name collection = get_collection.domain;
+
 
   // --- Ensure collection matches for correct contentid --- //
   content_t content_tbl(get_self(), get_self().value);
   auto by_external_id_idx = content_tbl.get_index<"byextid"_n>();
   auto content_itr = by_external_id_idx.find(templateid);
-  eosio::check(content_itr != by_external_id_idx.end() && content_itr->domain == collection, "NFT content not found or collection mismatch");
+  check(content_itr != by_external_id_idx.end() && content_itr->domain == collection, "NFT content not found or collection mismatch");
 
   // Pass the content_id to upsertup to update the ups
   upsertup(upscount, upsender, content_itr->id, 0);
@@ -347,7 +344,7 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
     } else if ( is_nft ) {
       // --- Handle NFT --- //
       // --- Check the providers table --- //
-      content_provider_singleton content_prov(get_self(), template);
+      content_provider_singleton content_prov(get_self(), templateid);
 
       // --- Ensure the collection is not already registered --- //
       check(content_prov.exists(), "This collection is not registered. Use regnftcol first.");
@@ -376,15 +373,16 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
         row.longitude = longitude_int;
         row.subcontinent = (subcontinent != 0) ? subcontinent : 1;
         row.country = country;
-        row.subdivision = subdivision
+        row.subdivision = subdivision;
         row.postal_code = postal_code;
       });
 
       // --- Insert NFT into content_domain table (needed later for simple upvotes) -- //
-      content_domain_t content_domain_singleton(get_self(), templateid); // Scope by template ID
-      eosio::check(!content_domain_singleton.exists(), "Template ID already exists in content_domain.");
-      content_domain domain_entry = {collection}; // Assuming content_domain struct has a 'domain' field for collection name
-      content_domain_singleton.set(domain_entry, submitter); // Set with the authority of the submitter
+      content_domain_t content_domain_singleton(get_self(), static_cast<uint64_t>(templateid)); // CHECK is this best scope or domain? Scope by template ID
+      check(!content_domain_singleton.exists(), "Template ID already exists in content_domain.");
+      content_domain domain_entry;
+       domain_entry
+      content_domain_singleton.set(domain_entry, submitter); // Set with the authority of the submitter // CHECK .set syntax
 
 
     } else {

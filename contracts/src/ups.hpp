@@ -10,7 +10,6 @@
 /*/
 #include <checkformat.hpp>
 #include <atomicdata.hpp>
-
 eosio-cpp -I eosio -I ../include -abigen -o ups.wasm ups.cpp --no-missing-ricardian-clause
 /*/
 
@@ -27,7 +26,7 @@ struct content_provider {
   string raw_domain;
   uint32_t country; // codes from ISO 3166 alpha-3
 
-  uint64_t primary_key() const { return domain.value; }
+  uint64_t primary_key() const { return static_cast<uint64_t>(domain.value); }
 };
 
 typedef singleton<name("contentprov"), content_provider> content_provider_singleton;
@@ -236,7 +235,8 @@ typedef singleton<name("contdomain"), content_domain> content_domain_t;
 
   ACTION removeupper(name upsender);
   
-  ACTION updatecont(uint64_t content_id);
+  ACTION updatecont(name& submitter, uint64_t content_id, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code , const std::string& continent_subregion_name, const std::string& country_iso3, uint32_t subdivision, uint32_t postal_code);
+
 
   ACTION regdomain(const name& submitter, const string& url);
 

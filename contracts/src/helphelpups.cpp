@@ -25,7 +25,7 @@ ups::config ups::check_config() // --- RETURNS false or config type
 // --- Returns the current Time Unit --- //
 uint32_t ups::find_tu(uint32_t momentuin, uint32_t tu_length){
   // 1561139700 is the first Time Unit in Seconds
-  uint32_t time_unit = floor(momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
+  uint32_t time_unit = (momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
   return time_unit;
 }
 
@@ -36,7 +36,7 @@ uint32_t ups::find_tu(uint32_t tu_length = 0){
     tu_length = conf.timeunit;
   }
   uint32_t momentuin = eosio::current_time_point().sec_since_epoch();
-  uint32_t time_unit = floor(momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
+  uint32_t time_unit = (momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
   return time_unit;
 }
 

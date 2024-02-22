@@ -4,7 +4,7 @@
 
 ACTION ups::payup(name upsender = ""_n) {
     /*/ --- Require only the upsender to be able to claim rewards [Optional] --- //
-    Commented out, action allows for anyone to call the action to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
+    Commented out, action allows for anyone to call the action for contract to pay other people. Otherwise a person would be unable to claim if they were out of CPU. 
     /*/
     //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
     // --- Send to the payment dispatcher --- //
@@ -14,12 +14,12 @@ ACTION ups::payup(name upsender = ""_n) {
 
 ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0){
 
-    check((has_auth(itr->submitter) || has_auth(get_self())) , "⚡️ Only the submitter "+ itr->submitter.to_string() +" can update content.")
-
     // --- Get the content --- //
     content_t contents(get_self(), get_self().value);
     auto itr = contents.find(content_id);
     check(itr != contents.end(), "⚡️ Content with the specified ID does not exist.");
+
+    check(has_auth(itr->submitter) || has_auth(get_self()) , "⚡️ Only the submitter "+ itr->submitter.to_string() +" can update content.")
 
     uint32_t subcontinent = 0;
     uint32_t country = 0;
@@ -39,8 +39,8 @@ ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0
     } 
 
     // --- Validate the country as a string or an int --- //
-    if (!country_name.empty() || country_code != 0) {
-        country = is_valid_country(country_code, country_name);
+    if (!country_iso3.empty() || country_code != 0) {
+        country = is_valid_country(country_code, country_iso3);
     } 
 
     // --- Update the content record --- //
@@ -48,7 +48,7 @@ ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0
         row.latitude = (latitude_int != 0) ? latitude : row.latitude; // CHANGE and see if it compiles 
         row.longitude = (longitude_int != 0) ? longitude : row.longitude;
         row.subcontinent = (subcontinent != 0) ? subcontinent : row.subcontinent;
-        row.country = (nation != 0) ? nation : row.nation;
+        row.country = (country != 0) ? country : row.country;
         row.subdivision = (subdivision != 0) ? subdivision : row.subdivision;
         row.postal_code = (postal_code != 0) ? postal_code : row.postal_code;
     });
@@ -82,13 +82,14 @@ ACTION ups::regdomain(const name& submitter, const string& url, const vector<uin
 /*/----
   This functionality isn't included, but can be added   
   Optionally, you can scope the config table to the name of a domain (content provider liek a web platform or a NFT collection)
-  Allows each content to have their own token for Ups + rewards
+  Allows each content provider to have their own token for Ups + rewards
 
 ACTION ups::configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount) {
 
 }
 /*///---
 
+//TODO fix 
 ACTION ups::regnftcol(const name& submitter, const name& nft_collection, string& country) {
     // --- Check if collection exists + user is authorized  --- //
     check(has_auth(submitter), "The content submitter must sign."); 
@@ -97,7 +98,10 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, string&
     // --- Require collection owners to register collection --- //
     //check(isAuthorized(nft_collection, submitter), "Submitter is not authorized for this collection.");
 
-    check(is_valid_country()
+    uint32_t country_code;
+    
+    // -- This is correct with one = is_valid_country returns uint32_T
+    check(country_code = is_valid_country(country), "Country didn't match. Use the ISO 3601 Alpha 3 letter code.");
 
     // --- Check the providers table --- //
     content_provider_singleton content_prov(get_self(), nft_collection.value);
@@ -105,13 +109,16 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, string&
     // --- Ensure the collection is not already registered --- //
     check(!content_prov.exists(), "Content provider already registered for this domain");
 
+/*/
     // --- Register the collection --- //
-    content_provider new_provider
+    content_provider new_provider;
     new_provider.domain = nft_collection,
     new_provider.raw_domain = nft_collection.to_string(),
     new_provider.country = country
+/*/
 
-    content_prov.set(new_provider, submitter); // --- Submitter pays to register
+// Check if this is .set syntaxx or not and scope
+    content_prov.set(new_provider, submitter); // --- Submitter pays to register CHECK if this is correct or scope
 }
 
 ACTION ups::addurl(const name& submitter, const string& url, const name& domain, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0) { 
@@ -135,7 +142,7 @@ ACTION ups::addnft(const name& submitter, double latitude = 0.0, double longitud
     config conf = check_config();
     
     // --- Uncomment to allow free registration of content --- //
-    check(/*/has_auth(submitter) || /*/has_auth(get_self())), "Add NFTs to be ranked by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+    check(/*/has_auth(submitter) || /*/has_auth(get_self()), "Add NFTs to be ranked by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
 
     // --- Call dispatcher function --- // 
     addcontent(submitter, latitude, longitude, continent_subregion_code, country_code, continent_subregion_name, country_iso3, subdivision, postal_code, url, domain, collection, templateid);
