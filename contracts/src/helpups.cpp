@@ -59,14 +59,11 @@ void ups::upsertup_url(uint32_t upscount, name upsender, string& url ) {
 // --- ROUTER prepares and calls upsertup() --- //
 void ups::upsertup_nft(uint32_t upscount, name upsender, name collection, int32_t templateid) {
 
-  // --- Search for the domain (NFT collection) in the content_domain table using templateid -- //
-
-
   // --- Ensure collection matches for correct contentid --- //
   content_t content_tbl(get_self(), get_self().value);
   auto by_external_id_idx = content_tbl.get_index<"byextid"_n>();
   auto content_itr = by_external_id_idx.find(templateid);
-  check(content_itr != by_external_id_idx.end() && content_itr->domain == collection, "NFT content not found or collection mismatch");
+  check(content_itr != by_external_id_idx.end() && content_itr->domain == collection, "⚡️ NFT content not found or collection mismatch");
 
   // Pass the content_id to upsertup to update the ups
   upsertup(upscount, upsender, content_itr->id, 0);
@@ -178,10 +175,10 @@ void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, boo
     // --- Find submitter name to pay them --- //
     content_t _contents(get_self(), get_self().value);
     auto content_itr = _contents.find(content_id);
-    eosio::check(content_itr != _contents.end(), "Content not found");
+    eosio::check(content_itr != _contents.end(), "⚡️ Content not found");
     name submitter = content_itr->submitter;
 
-    // --- Find current time unit --- //
+    // --- Find current time sec --- //
     uint32_t current_time = eosio::current_time_point().sec_since_epoch();
 
     // --- Upsert IOU for a given receiver and sender --- //
@@ -225,7 +222,7 @@ void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, boo
 // --- Send the beautiful people their tokens  --- //
 void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem = true){
 
-  check(receiver != ""_n, "We can't pay no one.");
+  check(receiver != ""_n, "⚡️ We can't pay no one.");
 
   // --- Check that the rewards aren't paused --- //
   config conf = check_config();
@@ -236,7 +233,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   // --- Get the IOUs --- //
   ious_t _ious(get_self(), receiver.value); 
   auto iou_itr = _ious.begin();
-  check(iou_itr != _ious.end(), "You are all paid up. Send some Ups and come back");
+  check(iou_itr != _ious.end(), "You are all paid up. Send some Ups and come back ⚡️ ");
   
   // --- Calculate Payments --- //
   uint32_t paid = 0;
@@ -269,7 +266,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
         permission_level{get_self(), "active"_n},
         conf.reward_token_contract, 
         "transfer"_n,
-        std::make_tuple(get_self(), receiver, total_payment, std::string("Rewards for "+receiver.to_string()))
+        std::make_tuple(get_self(), receiver, total_payment, string("Rewards for "+receiver.to_string()))
     ).send();
   }
 
@@ -278,7 +275,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
 
 
 // --- Handles adding both NFT content and URL content --- // TODO add to the new content_domain singleton
-void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const std::string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0)
+void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0)
 { 
     // --- Check if submitter is in providers table --- //
     require_auth(submitter);
@@ -315,14 +312,14 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
 
       // --- Check if domain is registered --- //
       content_provider_singleton content_prov(get_self(), domain.value);
-      check(content_prov.exists(), "Register the domain to start adding content for upvotes");
+      check(content_prov.exists(), "⚡️ Register the domain to start adding content for upvotes");
 
       // --- Check if content already exists --- //
         content_t contents(get_self(), get_self().value);
         auto gudhash = contents.get_index<"bygudahash"_n>();
         auto itr = gudhash.find(new_hash);
 
-        check(itr == gudhash.end(), "Content exists, send Ups now");
+        check(itr == gudhash.end(), "⚡️ Content exists, send Ups now");
 
         // --- Insert NFT into content table -- //
         contents.emplace(submitter, [&](auto& row) {
@@ -347,19 +344,19 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
       content_provider_singleton content_prov(get_self(), templateid);
 
       // --- Ensure the collection is not already registered --- //
-      check(content_prov.exists(), "This collection is not registered. Use regnftcol first.");
+      check(content_prov.exists(), "⚡️ This collection is not registered. Use regnftcol first.");
 
 
       // --- Check if templateid is valid --- //
       atomicassets::templates_t templates_tbl(atomicassets::ATOMICASSETS_ACCOUNT, collection.value); /// CHECK mangled, should be 
       auto template_itr = templates_tbl.find(templateid);
-      check(template_itr != templates_tbl.end(), "Template does not exist");
+      check(template_itr != templates_tbl.end(), "⚡️ Template does not exist");
 
       // --- Check if NFT already exists in content_t --- //
       content_t contents(get_self(), get_self().value);
-      auto by_external_id_idx = contents.get_index<"byexternal"_n>(); // Assuming this is the secondary index for external_id
+      auto by_external_id_idx = contents.get_index<"byextid"_n>(); // Assuming this is the secondary index for external_id
       auto nft_itr = by_external_id_idx.find(templateid);
-      check(nft_itr == by_external_id_idx.end(), "NFT is already registered. Send Ups.");
+      check(nft_itr == by_external_id_idx.end(), "⚡️ NFT is already registered. Send Ups.");
 
       // Insert new NFT content
       contents.emplace(submitter, [&](auto& row) {
@@ -377,16 +374,8 @@ void ups::addcontent(name& submitter, double latitude = 0.0, double longitude = 
         row.postal_code = postal_code;
       });
 
-      // --- Insert NFT into content_domain table (needed later for simple upvotes) -- //
-      content_domain_t content_domain_singleton(get_self(), static_cast<uint64_t>(templateid)); // CHECK is this best scope or domain? Scope by template ID
-      check(!content_domain_singleton.exists(), "Template ID already exists in content_domain.");
-      content_domain domain_entry;
-       domain_entry
-      content_domain_singleton.set(domain_entry, submitter); // Set with the authority of the submitter // CHECK .set syntax
-
-
     } else {
-      check(0, "This is not a valid URL or NFT");
+      check(0, "⚡️ This is not a valid URL or NFT");
     }
     // dont forget : row.id = _ups.available_primary_key();
 }

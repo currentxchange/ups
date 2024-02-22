@@ -102,16 +102,16 @@ auto ups::parse_url(const string& url, bool hash_whole = false, bool chopped_who
 
 /*/
 
-checksum256 ups::url_hash(const std::string& url) {
+checksum256 ups::url_hash(const string& url) {
 
     string newurl = chopped_url(url);
     return eosio::sha256(newurl.data(), newurl.size());
 }
 
 // --- Returns URL after removing the protocol part and "www." --- //
-string ups::chopped_url(const std::string& url) {
+string ups::chopped_url(const string& url) {
     auto start = url.find("://");
-    if (start != std::string::npos) {
+    if (start != string::npos) {
         start += 3; // Move past "://"
     } else {
         start = 0; // If "://" not found, start from the beginning
@@ -126,11 +126,11 @@ string ups::chopped_url(const std::string& url) {
 }
 
 // --- Returns just the domain part of the URL as a name --- //
-name ups::url_domain_name(const std::string& url) {
+name ups::url_domain_name(const string& url) {
 
     string domain_main = chopped_url(url);
     auto end = domain_main.find('/');
-    std::string domain_part = (end != std::string::npos) ? domain_main.substr(0, end) : domain_main;
+    string domain_part = (end != string::npos) ? domain_main.substr(0, end) : domain_main;
 
     // Replace invalid characters with a deterministic mapping to letters starting with 'a'
     for (auto& c : domain_part) {
@@ -157,7 +157,7 @@ name ups::url_domain_name(const std::string& url) {
 // --- Check if user is authorized on NFT collection --- //
 bool ups::isAuthorized(name collection, name user)
     {
-        auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
+        auto itrCollection = atomicassets::collections.require_find(collection.value, "⚡️ No collection with this name exists.");
         bool authorized = false;
         vector<name> authAccounts = itrCollection->authorized_accounts;
         for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++)
@@ -172,8 +172,8 @@ bool ups::isAuthorized(name collection, name user)
     }//END isAuthorized()
 
 // --- Converts a normal string to the name of a enum entry --- //
-string ups::normalize_enum_name(const std::string& input) {
-    std::string output = input;
+string ups::normalize_enum_name(const string& input) {
+    string output = input;
     std::transform(output.begin(), output.end(), output.begin(), [](unsigned char c) { return std::toupper(c); });
     std::replace(output.begin(), output.end(), ' ', '_');
     return output;
@@ -185,9 +185,9 @@ Pending testing
 
 /*///----
 
-uint32_t ups::is_valid_continent_subregion(uint32_t code, const std::string& name = "") {
+uint32_t ups::is_valid_continent_subregion(uint32_t code, const string& name = "") {
     if (!name.empty()) {
-        std::string enum_name = normalize_enum_name(name);
+        string enum_name = normalize_enum_name(name);
         if (enum_name == "WORLD") return 1;
         else if (enum_name == "SOUTHERN_ASIA") return 34;
         else if (enum_name == "EASTERN_ASIA") return 30;
@@ -244,9 +244,9 @@ uint32_t ups::is_valid_continent_subregion(uint32_t code, const std::string& nam
     }
 }
 
-uint32_t ups::is_valid_country(uint32_t code, const std::string& name = "") {
-    if (!name.empty()) {
-        std::string enum_name = normalize_enum_name(name);
+uint32_t ups::is_valid_country(uint32_t code, const string country_iso3) {
+    if (!country_iso3.empty()) {
+        string enum_name = normalize_enum_name(country_iso3);
         if (enum_name == "AFG") return 4;
         else if (enum_name == "ALA") return 248;
         else if (enum_name == "ALB") return 8;
@@ -753,13 +753,13 @@ uint32_t ups::is_valid_country(uint32_t code, const std::string& name = "") {
 }
 
 vector<int32_t> validate_and_format_coords(const vector<double>& coords) {
-    check(coords.size() == 2, "Coordinates vector must contain two decimal numbers, first being latitude, second longitude.");
+    check(coords.size() == 2, "⚡️ Coordinates vector must contain two decimal numbers, first being latitude, second longitude.");
     double latitude = coords[0];
     double longitude = coords[1];
 
     // Validate Latitude and Longitude
-    check(latitude >= -90.0 && latitude <= 90.0, "Latitude must be between -90 and 90.");
-    check(longitude >= -180.0 && longitude <= 180.0, "Longitude must be between -180 and 180.");
+    check(latitude >= -90.0 && latitude <= 90.0, "⚡️ Latitude must be between -90 and 90.");
+    check(longitude >= -180.0 && longitude <= 180.0, "⚡️ Longitude must be between -180 and 180.");
 
     // Format to 4 decimal places and convert to integer with the decimal part
     int32_t formatted_latitude = static_cast<int32_t>(latitude * 10000); // Scaling to maintain 4 decimal digits

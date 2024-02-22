@@ -12,14 +12,14 @@ ACTION ups::payup(name upsender = ""_n) {
     
 }
 
-ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const std::string& continent_subregion_name = "", const std::string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0){
+ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0){
 
     // --- Get the content --- //
     content_t contents(get_self(), get_self().value);
     auto itr = contents.find(content_id);
     check(itr != contents.end(), "⚡️ Content with the specified ID does not exist.");
 
-    check(has_auth(itr->submitter) || has_auth(get_self()) , "⚡️ Only the submitter "+ itr->submitter.to_string() +" can update content.")
+    check(has_auth(itr->submitter) || has_auth(get_self()) , "⚡️ Only the submitter "+ itr->submitter.to_string() +" can update content.");
 
     uint32_t subcontinent = 0;
     uint32_t country = 0;
@@ -57,9 +57,9 @@ ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0
 
 
 
-ACTION ups::regdomain(const name& submitter, const string& url, const vector<uint32_t>& tetra_locode = {0, 0, 0, 0} ) {
+ACTION ups::regdomain(const name& submitter, const string& url, const string& country_iso3) {
 
-    check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name as the submitter.")
+    check((has_auth(submitter) || has_auth(get_self())) , "Please put your account name as the submitter.");
 
     // ---- Get a name from the URL --- //
     name domain_parsed = url_domain_name(url);
@@ -69,14 +69,17 @@ ACTION ups::regdomain(const name& submitter, const string& url, const vector<uin
     content_provider_singleton content_prov(get_self(), domain_parsed.value);
     eosio::check(!content_prov.exists(), "Content provider already registered for this domain");
 
+    // --- Assign country code from is_valid_country() --- //
+    uint32_t country_code = is_valid_country(0, country_iso3);
+   
     // ---- Register new content provider --- //
     content_provider prov_data;
     prov_data.domain = domain_parsed;    
-
     prov_data.raw_domain = domain_chopped;
+    prov_data.country = country_code;
 
     // Save the content provider information
-    content_prov.set(prov_data, submitter);
+    content_prov.set(prov_data, submitter);//CHECK
 }
 
 /*/----
@@ -90,21 +93,20 @@ ACTION ups::configdomain(const name& submitter, const string& url, const name& u
 /*///---
 
 //TODO fix 
-ACTION ups::regnftcol(const name& submitter, const name& nft_collection, string& country) {
+ACTION ups::regnftcol(const name& submitter, const name& collection, string& country) {
     // --- Check if collection exists + user is authorized  --- //
     check(has_auth(submitter), "The content submitter must sign."); 
     auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
 
     // --- Require collection owners to register collection --- //
-    //check(isAuthorized(nft_collection, submitter), "Submitter is not authorized for this collection.");
+    //check(isAuthorized(collection, submitter), "Submitter is not authorized for this collection.");
 
-    uint32_t country_code;
-    
-    // -- This is correct with one = is_valid_country returns uint32_T
-    check(country_code = is_valid_country(country), "Country didn't match. Use the ISO 3601 Alpha 3 letter code.");
+   
+    // -- Assign country code from is_valid_country() --- //
+    uint32_t country_code = is_valid_country(0, country);
 
     // --- Check the providers table --- //
-    content_provider_singleton content_prov(get_self(), nft_collection.value);
+    content_provider_singleton content_prov(get_self(), collection.value);
 
     // --- Ensure the collection is not already registered --- //
     check(!content_prov.exists(), "Content provider already registered for this domain");
@@ -112,23 +114,27 @@ ACTION ups::regnftcol(const name& submitter, const name& nft_collection, string&
 /*/
     // --- Register the collection --- //
     content_provider new_provider;
-    new_provider.domain = nft_collection,
-    new_provider.raw_domain = nft_collection.to_string(),
+    new_provider.domain = collection,
+    new_provider.raw_domain = collection.to_string(),
     new_provider.country = country
 /*/
 
 // Check if this is .set syntaxx or not and scope
-    content_prov.set(new_provider, submitter); // --- Submitter pays to register CHECK if this is correct or scope
+   // content_prov.set(new_provider, submitter); // --- Submitter pays to register CHECK if this is correct or scope
 }
 
-ACTION ups::addurl(const name& submitter, const string& url, const name& domain, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0) { 
+ACTION ups::addurl(name submitter, const string& url, const name& domain, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0) { 
     
     name collection = ""_n;
     uint32_t templateid = 0;
-    ups::config conf = check_config();
+    config conf = check_config();
 
     // --- Uncomment to allow free registration of content --- //
-    check(/*/has_auth(submitter) || /*/has_auth(get_self())), "Add linked content by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+    //TODO debug real memo 
+    //check(/*/has_auth(submitter) || /*/has_auth(get_self()), "Add linked content by sending " +conf.one_up_amount +" " + conf.up_token_symbol +" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+   check(/*/has_auth(submitter) || /*/has_auth(get_self()), "Add linked content by sending Up with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+
+
 
     // --- Call dispatcher function --- // 
     addcontent(submitter, latitude, longitude, continent_subregion_code, country_code, continent_subregion_name, country_iso3, subdivision, postal_code, url, domain, collection, templateid);
@@ -136,13 +142,16 @@ ACTION ups::addurl(const name& submitter, const string& url, const name& domain,
     return;
 }//END addurl
 
-ACTION ups::addnft(const name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const name& collection = ""_n, const uint32_t& templateid = 0) { 
+ACTION ups::addnft(name& submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const name& collection = ""_n, const uint32_t& templateid = 0) { 
     string url = ""; 
     name domain = ""_n; 
     config conf = check_config();
     
     // --- Uncomment to allow free registration of content --- //
-    check(/*/has_auth(submitter) || /*/has_auth(get_self()), "Add NFTs to be ranked by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+    //check(has_auth(get_self()), "Add NFTs to be ranked by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+    check(has_auth(get_self()), "Add NFTs to be ranked by sending token with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+    // TODO Debug memo vars 
+
 
     // --- Call dispatcher function --- // 
     addcontent(submitter, latitude, longitude, continent_subregion_code, country_code, continent_subregion_name, country_iso3, subdivision, postal_code, url, domain, collection, templateid);
@@ -160,7 +169,7 @@ ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint3
         auto itr = contents.find(content_id);
         check(itr != contents.end(), "Content with this ID does not exist.");
 
-        check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter or contract can remove the content.")
+        check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter or contract can remove the content.");
 
         contents.erase(itr); // Remove the content from the table
     } 
@@ -182,19 +191,20 @@ ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint3
     } else {
         check(false, "Either content_id or both collection and template_id must be provided.");
     }
-}
+}//END removecontent()
 
 
 // WARN must add checks to payment actions to avoid paying ""_n
+//CHECK we removed upsender from index, ensure logic remains sound
 ACTION ups::removeupper(name upsender) {
     check(has_auth(upsender) || has_auth(get_self()), "Only "+upsender.to_string()+" can reset their account"); // Ensure only the contract can call this action 
 
     // --- Get the IOUs --- //
     ious_t ious(get_self(), get_self().value);
-    auto upsender_idx = ious.get_index<"byupsender"_n>();
+    //auto upsender_idx = ious.get_index<"byupsender"_n>();
     auto upcatcher_idx = ious.get_index<"byupcatcher"_n>();
 
-    auto upsender_itr = upsender_idx.lower_bound(upsender.value);
+    //auto upsender_itr = upsender_idx.lower_bound(upsender.value);
     auto upcatcher_itr = upcatcher_idx.lower_bound(upsender.value);
     int count = 0;
 
@@ -216,8 +226,7 @@ ACTION ups::removeupper(name upsender) {
     }
 
     // Check if there are no more records in the ious table related to the upsender
-    if (upsender_idx.lower_bound(upsender.value) == upsender_idx.end() && 
-        upcatcher_idx.lower_bound(upsender.value) == upcatcher_idx.end()) {
+    if ( upcatcher_idx.lower_bound(upsender.value) == upcatcher_idx.end()) {
         // Access the uppers table and remove the upsender
         uppers_t uppers(get_self(), get_self().value);
         auto upper_itr = uppers.find(upsender.value);
@@ -241,7 +250,7 @@ ACTION ups::removeupper(name upsender) {
             }
         }
 }
-//END removeupper()
+}//END removeupper()
 
 ACTION ups::pauserewards(bool pause) {
     // --- Action must be authorized by the contract itself --- //
@@ -298,14 +307,14 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
       // --- Token Checks --- //
     check(reward_token_symbol.is_valid() && up_token_symbol.is_valid(), "Invalid token symbol");
     check(one_up_amount.amount > 0 && one_reward_amount.amount > 0, "Quantity of reward and up must be positive, you can pause rewards for 0 by calling pauserewards");
-    check ((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
+    check((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
 
 
     if (existencial){
-        config& old_conf = conf_tbl.get();
+        config old_conf = conf_tbl.get();
         if (old_conf.timeunit != timeunit){
             // --- Can't change time unit after ups have been made as it's used for reward calculations --- //
-            _ups(get_self(), self().value);
+            _ups(get_self(), get_self().value);
             bool dundidit = (_ups.begin() != _ups.end());
             check (!dundidit, "You cannot adjust the timeunit after Ups have been made. Whoops.");
         }
@@ -323,7 +332,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     new_conf.reward_token_symbol = reward_token_symbol;
     new_conf.one_up_amount = one_up_amount; // --- One up and one reward are linked to one unit of time per user
     new_conf.one_reward_amount = one_reward_amount; // --- Keep this in mind if planning rewards + inflatioon
-    new.conf.reward_multiplier_percent = 100; // --- Increase or decrease rewards per time unit without destabalizing relationship. WARN may mean claims get paif current rate without calc of change tim 
+    new_conf.reward_multiplier_percent = 100; // --- Increase or decrease rewards per time unit without destabalizing relationship. WARN may mean claims get paif current rate without calc of change tim 
     new_conf.timeunit = timeunit; // This cannot change once  Ups are made. 
     new_conf.pay_submitter = pay_submitter;
     new_conf.pay_upsender = pay_upsender;
@@ -331,21 +340,25 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     new_conf.paused_ups = false;
 
     // --- Set the new config in the singleton --- //
-    _config.set(new_conf, get_self()); 
+    conf_tbl.set(new_conf, get_self()); 
+
+    // --- Find current time unit --- //
+    auto current_time = eosio::current_time_point().sec_since_epoch();
+
 
     // --- Set up the internal log --- //
     internallog_t internlog(get_self(), get_self().value);
     internallog internlog_data = internlog.get_or_default(internallog{//CHECK does this need to set a variable?
-        .lastpay = current_time_point();
-        .lastfullpay = current_time_point();
-        .purgatory = vector<name>(); 
-        .purg_content = vector<uint64_t>();
+        .lastpay = current_time,
+        .lastfullpay = current_time,
+        .purgatory = vector<name>(), 
+        .purg_content = vector<uint64_t>()
     });
 }
 
 
 // --- Receive Tokenized Ups + Put them in Tables --- //
-[[eosio::on_notify("*::transfer")]] void ups::_catch( const name from, const name to, const asset quantity, const string memo )
+[[eosio::on_notify("*::transfer")]] void ups::up_catch( const name from, const name to, const asset quantity, const string memo )
 {  
 
     if (from == _self || to != self) return;
@@ -392,8 +405,9 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             return;
         } else if (memo_man == "nft" ||memo_man == "upnft" ) {
             int32_t templateid;
-            check(templateid = std::stoul(parameter)), "Template ID is a number, send the memo as: upnft|<templateid> ");
-
+            
+            check(templateid = std::stoul(parameter)), "Template ID is a number, send the memo as: upnft|collection|templateid ");
+           check(templateid = static_cast<uint32_t>(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|collection|templateid") ; // second part of URL
 
             upsertup_nft(up_quantity, from, templateid);
 
@@ -403,7 +417,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             return;
         } else if (memo_man == "addnft") { // format nft|collection|tokenid  
             delimiter_pos = parameter.find('|')
-            check(delimiter_pos != string::npos, "Please send the memo as: nft|<collection>|<templateid> like ");
+            check(delimiter_pos != string::npos, "Please send the memo as: nft|collection|templateid ");
             //WARN could use more checks
             // --- Split memo into collection name and template id --- //
             name collection = name(parameter.substr(0, delimiter_pos)); // first part of URL

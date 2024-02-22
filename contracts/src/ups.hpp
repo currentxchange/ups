@@ -19,7 +19,8 @@ using namespace eosio;
 class [[eosio::contract]] ups : public contract {
   
 using contract::contract;
-public: 
+
+public:
 
 struct content_provider {
   name domain;
@@ -59,6 +60,7 @@ TABLE content {
   uint64_t primary_key() const { return id; } //CHECK use this to return the bitshift
   uint64_t by_domain() const { return domain.value; } //CHECK if needed with scoping
   uint64_t by_external_id() const { return static_cast<uint64_t>(external_id); }
+  uint64_t by_submitter() const { return submitter.value; }
   checksum256 by_gudahash() const { return gudahash; }
   uint64_t by_subcontinent() const { return static_cast<uint64_t>(subcontinent); }
   uint64_t by_country() const { return static_cast<uint64_t>(country); }
@@ -70,6 +72,7 @@ TABLE content {
 
 using content_t = multi_index<"content"_n, content,
   indexed_by<"bydomain"_n, const_mem_fun<content, uint64_t, &content::by_domain>>,
+  indexed_by<"bysubmitter"_n, const_mem_fun<content, uint64_t, &content::by_submitter>>,
   indexed_by<"byextid"_n, const_mem_fun<content, uint64_t, &content::by_external_id>>,
   indexed_by<"bygudahash"_n, const_mem_fun<content, checksum256, &content::by_gudahash>>,
   indexed_by<"bysubconteni"_n, const_mem_fun<content, uint64_t, &content::by_subcontinent>>,
@@ -192,7 +195,8 @@ using content_t = multi_index<"content"_n, content,
   void removecontent(uint64_t content_id);
   void addcontent(name& submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, uint32_t templateid);
   void upsertup_url(uint32_t upscount, name upsender, string& url);
-  void upsertup_nft(uint32_t upscount, name upsender, int32_t templateid);
+  
+  void upsertup_nft(uint32_t upscount, name upsender, name collection, int32_t templateid);
   void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
   void upsert_total(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
   void upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract);
@@ -202,15 +206,15 @@ using content_t = multi_index<"content"_n, content,
   uint32_t find_tu(uint32_t momentuin, uint32_t tu_length);
   uint32_t find_tu(uint32_t tu_length);
   //auto parse_url(const string& url, bool hash_whole, bool chopped_whole, bool chopped_domain);
-  string chopped_url(const std::string& url);
-  checksum256 url_hash(const std::string& url);
-  name url_domain_name(const std::string& url);
+  string chopped_url(const string& url);
+  checksum256 url_hash(const string& url);
+  name url_domain_name(const string& url);
   config check_config();
   std::optional<config> check_config(bool ignore_empty);
   bool isAuthorized(name collection, name user);
-  string normalize_enum_name(const std::string& input);
-  uint32_t is_valid_continent_subregion(uint32_t code, const std::string& name);
-  uint32_t is_valid_country(uint32_t code, const std::string& name);
+  string normalize_enum_name(const string& input);
+  uint32_t is_valid_continent_subregion(uint32_t code, const string& name);
+  uint32_t is_valid_country(uint32_t code, const string country_iso3);
   vector<int32_t> validate_and_format_coords(const vector<double>& coords);
 
 
@@ -224,25 +228,30 @@ using content_t = multi_index<"content"_n, content,
 
   
   [[eosio::on_notify("*::transfer")]] // CHECK REQUIRES correct contract for SOL/BLUX Listens for any token transfer
-  void up_catch( const name from, const name to, const asset quantity, const std::string memo );
+  void up_catch( const name from, const name to, const asset quantity, const string memo );
   
   ACTION payup(name upsender); // User's call to pay themselves
 
   ACTION removeupper(name upsender);
+
+  ACTION removecontent(uint32_t content_id, name collection, uint32_t template_id);
   
-  ACTION updatecont(name& submitter, uint64_t content_id, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code , const std::string& continent_subregion_name, const std::string& country_iso3, uint32_t subdivision, uint32_t postal_code);
+  ACTION updatecont(name& submitter, uint64_t content_id, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code , const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code);
 
 
-  ACTION regdomain(const name& submitter, const string& url);
+  ACTION regdomain(const name& submitter, const string& url, const string& country_iso3);
 
   ACTION setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier_percent, uint32_t timeunit);
 
   //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 
-  ACTION regnftcol(const name& submitter, const name& nft_collection);
+  ACTION regnftcol(const name& submitter, const name& nft_collection, string& country);
 
-  ACTION addurl(const name domain, const name& submitter, const string& url); //CHECK if need the domain name
+  ACTION addurl( name submitter, const string& url, const name& domain, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code);
+    
 
+  ACTION addnft(name& submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code, const name& collection, const uint32_t& templateid);
+  
   ACTION pauserewards(bool pause);
 
   ACTION pauseups(bool pause);
