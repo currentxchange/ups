@@ -1,0 +1,639 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.2",
+    "types": [],
+    "structs": [
+        {
+            "name": "addnft",
+            "base": "",
+            "fields": [
+                {
+                    "name": "submitter",
+                    "type": "name"
+                },
+                {
+                    "name": "latitude",
+                    "type": "float64"
+                },
+                {
+                    "name": "longitude",
+                    "type": "float64"
+                },
+                {
+                    "name": "continent_subregion_code",
+                    "type": "uint32"
+                },
+                {
+                    "name": "country_code",
+                    "type": "uint32"
+                },
+                {
+                    "name": "continent_subregion_name",
+                    "type": "string"
+                },
+                {
+                    "name": "country_iso3",
+                    "type": "string"
+                },
+                {
+                    "name": "subdivision",
+                    "type": "uint32"
+                },
+                {
+                    "name": "postal_code",
+                    "type": "uint32"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "templateid",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "addurl",
+            "base": "",
+            "fields": [
+                {
+                    "name": "submitter",
+                    "type": "name"
+                },
+                {
+                    "name": "url",
+                    "type": "string"
+                },
+                {
+                    "name": "domain",
+                    "type": "name"
+                },
+                {
+                    "name": "latitude",
+                    "type": "float64"
+                },
+                {
+                    "name": "longitude",
+                    "type": "float64"
+                },
+                {
+                    "name": "continent_subregion_code",
+                    "type": "uint32"
+                },
+                {
+                    "name": "country_code",
+                    "type": "uint32"
+                },
+                {
+                    "name": "continent_subregion_name",
+                    "type": "string"
+                },
+                {
+                    "name": "country_iso3",
+                    "type": "string"
+                },
+                {
+                    "name": "subdivision",
+                    "type": "uint32"
+                },
+                {
+                    "name": "postal_code",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "config",
+            "base": "",
+            "fields": [
+                {
+                    "name": "up_token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "up_token_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "reward_token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "reward_token_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "one_up_amount",
+                    "type": "asset"
+                },
+                {
+                    "name": "one_reward_amount",
+                    "type": "asset"
+                },
+                {
+                    "name": "reward_multiplier_percent",
+                    "type": "uint32"
+                },
+                {
+                    "name": "timeunit",
+                    "type": "uint32"
+                },
+                {
+                    "name": "pay_submitter",
+                    "type": "bool"
+                },
+                {
+                    "name": "pay_upsender",
+                    "type": "bool"
+                },
+                {
+                    "name": "paused_rewards",
+                    "type": "bool"
+                },
+                {
+                    "name": "paused_ups",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "content",
+            "base": "",
+            "fields": [
+                {
+                    "name": "contentid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "domain",
+                    "type": "name"
+                },
+                {
+                    "name": "submitter",
+                    "type": "name"
+                },
+                {
+                    "name": "link",
+                    "type": "string"
+                },
+                {
+                    "name": "external_id",
+                    "type": "uint32"
+                },
+                {
+                    "name": "gudahash",
+                    "type": "checksum256"
+                },
+                {
+                    "name": "created",
+                    "type": "uint32"
+                },
+                {
+                    "name": "latitude",
+                    "type": "int32"
+                },
+                {
+                    "name": "longitude",
+                    "type": "int32"
+                },
+                {
+                    "name": "subcontinent",
+                    "type": "uint32"
+                },
+                {
+                    "name": "country",
+                    "type": "uint32"
+                },
+                {
+                    "name": "subdivision",
+                    "type": "uint32"
+                },
+                {
+                    "name": "postal_code",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "internallog",
+            "base": "",
+            "fields": [
+                {
+                    "name": "lastpay",
+                    "type": "uint32"
+                },
+                {
+                    "name": "lastfullpay",
+                    "type": "uint32"
+                },
+                {
+                    "name": "purgatory",
+                    "type": "name[]"
+                },
+                {
+                    "name": "purg_content",
+                    "type": "uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "ious",
+            "base": "",
+            "fields": [
+                {
+                    "name": "iouid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "contentid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "upcatcher",
+                    "type": "name"
+                },
+                {
+                    "name": "upscount",
+                    "type": "uint32"
+                },
+                {
+                    "name": "initiated",
+                    "type": "uint32"
+                },
+                {
+                    "name": "updated",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "pauserewards",
+            "base": "",
+            "fields": [
+                {
+                    "name": "pause",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "pauseups",
+            "base": "",
+            "fields": [
+                {
+                    "name": "pause",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "payup",
+            "base": "",
+            "fields": [
+                {
+                    "name": "upsender",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "regdomain",
+            "base": "",
+            "fields": [
+                {
+                    "name": "submitter",
+                    "type": "name"
+                },
+                {
+                    "name": "url",
+                    "type": "string"
+                },
+                {
+                    "name": "country_iso3",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "regnftcol",
+            "base": "",
+            "fields": [
+                {
+                    "name": "submitter",
+                    "type": "name"
+                },
+                {
+                    "name": "nft_collection",
+                    "type": "name"
+                },
+                {
+                    "name": "country",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "removeupper",
+            "base": "",
+            "fields": [
+                {
+                    "name": "upsender",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "remvcontent",
+            "base": "",
+            "fields": [
+                {
+                    "name": "contentid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "template_id",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "setconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "up_token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "up_token_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "reward_token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "reward_token_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "one_up_amount",
+                    "type": "asset"
+                },
+                {
+                    "name": "one_reward_amount",
+                    "type": "asset"
+                },
+                {
+                    "name": "pay_submitter",
+                    "type": "bool"
+                },
+                {
+                    "name": "pay_upsender",
+                    "type": "bool"
+                },
+                {
+                    "name": "reward_multiplier_percent",
+                    "type": "float64"
+                },
+                {
+                    "name": "timeunit",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "totals",
+            "base": "",
+            "fields": [
+                {
+                    "name": "contentid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "totalups",
+                    "type": "uint32"
+                },
+                {
+                    "name": "updated",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "updatecont",
+            "base": "",
+            "fields": [
+                {
+                    "name": "submitter",
+                    "type": "name"
+                },
+                {
+                    "name": "contentid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "latitude",
+                    "type": "float64"
+                },
+                {
+                    "name": "longitude",
+                    "type": "float64"
+                },
+                {
+                    "name": "continent_subregion_code",
+                    "type": "uint32"
+                },
+                {
+                    "name": "country_code",
+                    "type": "uint32"
+                },
+                {
+                    "name": "continent_subregion_name",
+                    "type": "string"
+                },
+                {
+                    "name": "country_iso3",
+                    "type": "string"
+                },
+                {
+                    "name": "subdivision",
+                    "type": "uint32"
+                },
+                {
+                    "name": "postal_code",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "uppers",
+            "base": "",
+            "fields": [
+                {
+                    "name": "upsender",
+                    "type": "name"
+                },
+                {
+                    "name": "firstup",
+                    "type": "uint32"
+                },
+                {
+                    "name": "lastup",
+                    "type": "uint32"
+                },
+                {
+                    "name": "totalups",
+                    "type": "uint32"
+                },
+                {
+                    "name": "claimable",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "ups_log",
+            "base": "",
+            "fields": [
+                {
+                    "name": "upid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "contentid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "upsender",
+                    "type": "name"
+                },
+                {
+                    "name": "totalups",
+                    "type": "uint32"
+                },
+                {
+                    "name": "tuid",
+                    "type": "uint32"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "addnft",
+            "type": "addnft",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "addurl",
+            "type": "addurl",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "pauserewards",
+            "type": "pauserewards",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "pauseups",
+            "type": "pauseups",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "payup",
+            "type": "payup",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "regdomain",
+            "type": "regdomain",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "regnftcol",
+            "type": "regnftcol",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "removeupper",
+            "type": "removeupper",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "remvcontent",
+            "type": "remvcontent",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setconfig",
+            "type": "setconfig",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updatecont",
+            "type": "updatecont",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "config",
+            "type": "config",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "content",
+            "type": "content",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "internallog",
+            "type": "internallog",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "ious",
+            "type": "ious",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "totals",
+            "type": "totals",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "uppers",
+            "type": "uppers",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "upslog",
+            "type": "ups_log",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "kv_tables": {},
+    "ricardian_clauses": [],
+    "variants": [],
+    "action_results": []
+}

@@ -12,11 +12,11 @@ ACTION ups::payup(name upsender = ""_n) {
     
 }
 
-ACTION ups::updatecont(name& submitter, uint64_t content_id, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0){
+ACTION ups::updatecont(name& submitter, uint64_t contentid, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0){
 
     // --- Get the content --- //
     content_t contents(get_self(), get_self().value);
-    auto itr = contents.find(content_id);
+    auto itr = contents.find(contentid);
     check(itr != contents.end(), "⚡️ Content with the specified ID does not exist.");
 
     check(has_auth(itr->submitter) || has_auth(get_self()) , "⚡️ Only the submitter "+ itr->submitter.to_string() +" can update content.");
@@ -160,23 +160,23 @@ ACTION ups::addnft(name& submitter, double latitude = 0.0, double longitude = 0.
 }//END addnft
 
 //TODO WARN needs update to remove the up records
-ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint32_t template_id = 0) {
+ACTION ups::remvcontent(uint64_t contentid = 0, name collection = ""_n, uint32_t template_id = 0) {
 
     content_t contents(get_self(), get_self().value); // Access the content table
 
-    // If content_id is provided, remove by content_id
-    if (content_id != 0) {
-        auto itr = contents.find(content_id);
+    // If contentid is provided, remove by contentid
+    if (contentid != 0) {
+        auto itr = contents.find(contentid);
         check(itr != contents.end(), "Content with this ID does not exist.");
 
         check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter or contract can remove the content.");
 
         contents.erase(itr); // Remove the content from the table
     } 
-    // If content_id is not set, use the collection name and template_id
+    // If contentid is not set, use the collection name and template_id
     else if (collection != ""_n && template_id != 0) {
         auto by_template = contents.get_index<"byextid"_n>(); 
-        auto temp_itr = by_template.find(((uint64_t) content_id));
+        auto temp_itr = by_template.find(((uint64_t) contentid));
 
         bool found = false;
         for (; temp_itr != by_template.end(); ++temp_itr) {
@@ -189,9 +189,9 @@ ACTION ups::removecontent(uint32_t content_id = 0, name collection = ""_n, uint3
 
         check(found, "Nothing found for the specified collection and template ID.");
     } else {
-        check(false, "Either content_id or both collection and template_id must be provided.");
+        check(false, "Either contentid or both collection and template_id must be provided.");
     }
-}//END removecontent()
+}//END remvcontent()
 
 
 // WARN must add checks to payment actions to avoid paying ""_n
@@ -302,19 +302,16 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     config_t conf_tbl(get_self(), get_self().value);
     bool existencial = conf_tbl.exists();
 
-
-
-      // --- Token Checks --- //
+    // --- Token Checks --- //
     check(reward_token_symbol.is_valid() && up_token_symbol.is_valid(), "Invalid token symbol");
     check(one_up_amount.amount > 0 && one_reward_amount.amount > 0, "Quantity of reward and up must be positive, you can pause rewards for 0 by calling pauserewards");
     check((is_account(up_token_contract) && is_account(reward_token_contract)), "Contract account(s) doesn't exist");
-
 
     if (existencial){
         config old_conf = conf_tbl.get();
         if (old_conf.timeunit != timeunit){
             // --- Can't change time unit after ups have been made as it's used for reward calculations --- //
-            _ups(get_self(), get_self().value);
+            ups::upslog_t _ups(get_self(), get_self().value);
             bool dundidit = (_ups.begin() != _ups.end());
             check (!dundidit, "You cannot adjust the timeunit after Ups have been made. Whoops.");
         }
@@ -361,13 +358,13 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 [[eosio::on_notify("*::transfer")]] void ups::up_catch( const name from, const name to, const asset quantity, const string memo )
 {  
 
-    if (from == _self || to != self) return;
+    if (from == _self || to != _self) return;
     
     // --- Checks + Set up Variables --- //
-    config conf = check_config()
+    config conf = check_config();
     check(!conf.paused_ups, "Ups are currently paused.");
     check(get_first_receiver() == conf.up_token_contract, "This isn't the correct Up token.");
-    uint64_t up_quantity 
+    uint64_t up_quantity; 
     check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
     check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
 
@@ -380,24 +377,21 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         }
     }
 
-    memo = sanitized_memo;
-    delete sanitized_memo;
 
     // --- Check for '|' in memo --- //
-    size_t delimiter_pos = memo.find('|');
+    size_t delimiter_pos = sanitized_memo.find('|');
     if (delimiter_pos != string::npos) {
         // --- Split memo into function name and parameter --- //
-        string memo_man = memo.substr(0, delimiter_pos); // first part of URL
-        string parameter = memo.substr(delimiter_pos + 1); // second part of URL
+        string memo_man = sanitized_memo.substr(0, delimiter_pos); // first part of URL
+        string parameter = sanitized_memo.substr(delimiter_pos + 1); // second part of URL
         name domain;
  
         // --- Call the function based on memo_man --- //
         if (memo_man == "up") {
             // --- Send up using contentID --- //
-            uint64_t content_id;
-            check(content_id = std::stoull(parameter)), "Content ID is a number, send the memo as: up|<contentid> ");
-            upsertup(up_quantity, from, content_id, 0);
-
+            uint64_t contentid;
+            check(contentid = std::stoull(parameter), "Content ID is a number, send the memo as: up|<contentid> ");
+            upsertup(up_quantity, from, contentid, 0);
             return;
         } else if (memo_man == "url" ||memo_man == "uplink" ) { 
 
@@ -405,25 +399,26 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             return;
         } else if (memo_man == "nft" ||memo_man == "upnft" ) {
             int32_t templateid;
-            
-            check(templateid = std::stoul(parameter)), "Template ID is a number, send the memo as: upnft|collection|templateid ");
-           check(templateid = static_cast<uint32_t>(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|collection|templateid") ; // second part of URL
+            delimiter_pos = parameter.find('|');
+            check(delimiter_pos != string::npos, "Please send the memo as: nft|collection|templateid ");
+            name collection = name(parameter.substr(0, delimiter_pos)); // first part 
 
-            upsertup_nft(up_quantity, from, templateid);
+        
+            check(templateid = std::stoul(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
+            upsertup_nft(up_quantity, from, collection, templateid);
 
             return;
         } else if (memo_man == "addurl" ||memo_man == "link" ) {
             addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
             return;
         } else if (memo_man == "addnft") { // format nft|collection|tokenid  
-            delimiter_pos = parameter.find('|')
-            check(delimiter_pos != string::npos, "Please send the memo as: nft|collection|templateid ");
-            //WARN could use more checks
+            int32_t templateid;
+            delimiter_pos = parameter.find('|');
+            check(delimiter_pos != string::npos, "Please send the memo as: addnft|<collection>|<templateid> ");
             // --- Split memo into collection name and template id --- //
-            name collection = name(parameter.substr(0, delimiter_pos)); // first part of URL
-            uint32_t templateid;
-           check(templateid = static_cast<uint32_t>(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|collection|templateid") ; // second part of URL
-
+            name collection = name(parameter.substr(0, delimiter_pos)); // first part
+            
+            check(templateid = std::stoul(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
             addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
             return;
         } /*/else if (memo.size() <= 12) {
@@ -434,20 +429,10 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             // Handle unknown memo
             check (0, "Unknown memo, send contentid with up| or url| register/upvote or reg| to register");
         }
+    } else {
+        /// --- --- // 
+        check(0, "⚡️ Unknown memo, Up with: up|<contentid>, upurl|<link>, upnft|<collection>|<templateid>, or register content with addurl|<url>, addnft|<collection>|<templateid>");
     }
-
-    // --- If '|' is not found in memo, treat the entire memo as a name
-    check(memo.size() <= 12, "Please send Up with an contentid or register this content. reg|url")
-
-  // --- Instantiate Content Table --- //
-  _content ups(_self, _self.value);
-
-  // --- Check for content in table --- // 
-  auto itr = ups.find(content_name);
-  check(itr != ups.end(), "Content ID does not exist. Add it first.");
-  
-  // --- Pass on to upsertup() to register in table --- //
-  upsertup(up_quantity, from, content_name, 0);
   
 } // END token transfer listener
 

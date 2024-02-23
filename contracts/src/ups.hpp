@@ -43,7 +43,7 @@ Find the top content in each area by indexes provided.
 /*/
 
 TABLE content {
-  uint64_t id;
+  uint64_t contentid;
   name domain;
   name submitter;
   string link;
@@ -57,7 +57,7 @@ TABLE content {
   uint32_t subdivision;
   uint32_t postal_code;
 
-  uint64_t primary_key() const { return id; } //CHECK use this to return the bitshift
+  uint64_t primary_key() const { return contentid; } //CHECK use this to return the bitshift
   uint64_t by_domain() const { return domain.value; } //CHECK if needed with scoping
   uint64_t by_external_id() const { return static_cast<uint64_t>(external_id); }
   uint64_t by_submitter() const { return submitter.value; }
@@ -66,7 +66,7 @@ TABLE content {
   uint64_t by_country() const { return static_cast<uint64_t>(country); }
   uint64_t by_subdivision() const { return static_cast<uint64_t>(subdivision); }
   uint64_t by_postal_code() const { return static_cast<uint64_t>(postal_code); }
-  uint64_t by_lat_lng() const { return (uint64_t{latitude} << 32) | longitude; }
+  uint64_t by_lat_lng() const { return (static_cast<uint64_t>(latitude) << 32) | longitude; }
  
 };
 
@@ -86,31 +86,31 @@ using content_t = multi_index<"content"_n, content,
 
   TABLE ups_log { 
     uint64_t upid; 
-    uint64_t content_id;
+    uint64_t contentid;
     name upsender;
     uint32_t totalups; 
     uint32_t tuid;
   
     uint64_t primary_key() const { return upid; }
-    uint64_t by_content_id() const { return content_id; }
+    uint64_t by_contentid() const { return contentid; }
     uint64_t by_upsender() const { return upsender.value; } 
     uint64_t by_ups() const { return static_cast<uint64_t>(totalups); }
     uint64_t by_tuid() const { return static_cast<uint64_t>(tuid); }
   };
   
   using upslog_t = multi_index<name("upslog"), ups_log,
-    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_content_id>>,
+    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_contentid>>,
       eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_upsender>>,
     eosio::indexed_by<"byups"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_ups>>,
     eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_tuid>>
   >;
   
   TABLE totals {
-    uint64_t content_id;
+    uint64_t contentid;
     uint32_t totalups; 
     uint32_t updated;
     
-    uint64_t primary_key() const { return content_id; }
+    uint64_t primary_key() const { return contentid; }
   };
   
   using totals_t = multi_index<name("totals"), totals>;
@@ -134,23 +134,25 @@ using content_t = multi_index<"content"_n, content,
   // CHECK that we are using the indexes to get the upsender, etc
   TABLE ious {
     uint64_t iouid;
-    uint64_t content_id;
+    uint64_t contentid;
     name upcatcher;
     uint32_t upscount;
     uint32_t initiated;
     uint32_t updated; 
-    uint64_t primary_key() const { return iouid; }
+
     uint64_t by_upcatcher() const { return upcatcher.value; }
-    uint64_t by_content_id() const { return content_id; }
+    uint64_t by_contentid() const { return contentid; }
     uint64_t by_upscount() const { return static_cast<uint64_t>(upscount); }
     uint64_t by_initiated() const { return static_cast<uint64_t>(initiated); }
     uint64_t by_updated() const { return static_cast<uint64_t>(updated); }
+    
+    uint64_t primary_key() const { return iouid; }
   };
 
   using ious_t = multi_index<name("ious"), ious,
     eosio::indexed_by<"byupcatcher"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upcatcher>>,
     eosio::indexed_by<"byupscount"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upscount>>,
-    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_content_id>>,
+    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_contentid>>,
     eosio::indexed_by<"byinitiated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_initiated>>,
     eosio::indexed_by<"byupdated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_updated>>
   >;
@@ -189,17 +191,17 @@ using content_t = multi_index<"content"_n, content,
  
 
   // --- Helper Functions --- //
-  void upsertup(uint32_t upscount, name upsender, uint64_t content_id, bool negative);
-  void logup(uint32_t upscount, name upsender, uint64_t content_id);
+  void upsertup(uint32_t upscount, name upsender, uint64_t contentid, bool negative);
+  void logup(uint32_t upscount, name upsender, uint64_t contentid);
   void updateupper(uint32_t upscount, name upsender);
-  void removecontent(uint64_t content_id);
-  void addcontent(name& submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, uint32_t templateid);
+  void remvcontent(uint64_t contentid);
+  void addcontent(name submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, uint32_t templateid);
   void upsertup_url(uint32_t upscount, name upsender, string& url);
   
   void upsertup_nft(uint32_t upscount, name upsender, name collection, int32_t templateid);
-  void upsert_logup(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
-  void upsert_total(uint32_t upscount, name upsender, uint32_t content_id, bool negative);
-  void upsert_ious(uint32_t upscount, name upsender, uint64_t content_id, bool subtract);
+  void upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, bool negative);
+  void upsert_total(uint32_t upscount, name upsender, uint64_t contentid, bool negative);
+  void upsert_ious(uint32_t upscount, name upsender, uint64_t contentid, bool subtract);
   void pay_iou(uint32_t maxpayments, name receiver, bool paythem);
 
   // --- Functions that help the helper functions --- //
@@ -218,13 +220,13 @@ using content_t = multi_index<"content"_n, content,
   vector<int32_t> validate_and_format_coords(const vector<double>& coords);
 
 
-  // --- Declare the _ts for later use --- // 
+  /*/ --- Declare the _tables for later use --- // 
   ious_t _ious;
-  upslog_t _ups;
+  upslog_t _upslog;
   uppers_t _uppers;
   totals_t _totals;
   content_t _content;
-  
+  /*/
 
   
   [[eosio::on_notify("*::transfer")]] // CHECK REQUIRES correct contract for SOL/BLUX Listens for any token transfer
@@ -234,10 +236,9 @@ using content_t = multi_index<"content"_n, content,
 
   ACTION removeupper(name upsender);
 
-  ACTION removecontent(uint32_t content_id, name collection, uint32_t template_id);
+  ACTION remvcontent(uint64_t contentid, name collection, uint32_t template_id);
   
-  ACTION updatecont(name& submitter, uint64_t content_id, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code , const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code);
-
+  ACTION updatecont(name& submitter, uint64_t contentid, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code , const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code);
 
   ACTION regdomain(const name& submitter, const string& url, const string& country_iso3);
 
