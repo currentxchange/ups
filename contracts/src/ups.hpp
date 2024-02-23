@@ -168,7 +168,6 @@ using content_t = multi_index<"content"_n, content,
   };
   
   typedef singleton<name("internallog"), internallog> internallog_t;
-  //using internallog_t = multi_index<name("internallog"), internallog>;
 
 
   TABLE config {
@@ -193,7 +192,6 @@ using content_t = multi_index<"content"_n, content,
   // --- Helper Functions --- //
   void upsertup(uint32_t upscount, name upsender, uint64_t contentid, bool negative);
   void logup(uint32_t upscount, name upsender, uint64_t contentid);
-  void updateupper(uint32_t upscount, name upsender);
   void remvcontent(uint64_t contentid);
   void addcontent(name submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, uint32_t templateid);
   void upsertup_url(uint32_t upscount, name upsender, string& url);
@@ -250,7 +248,6 @@ using content_t = multi_index<"content"_n, content,
 
   ACTION addurl( name submitter, const string& url, const name& domain, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code);
     
-
   ACTION addnft(name& submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code, const name& collection, const uint32_t& templateid);
   
   ACTION pauserewards(bool pause);
