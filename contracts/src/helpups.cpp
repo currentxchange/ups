@@ -144,7 +144,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
   }//END if(results _totals)
 
   // --- Update / Insert _uppers record --- //
-  uppers_t _uppers(get_self(), contentid);
+  uppers_t _uppers(get_self(), get_self().value);
   auto listener_iterator = _uppers.find(contentid);
   if( listener_iterator == _uppers.end() )
   {
@@ -152,6 +152,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
       row.upsender = upsender;
       row.firstup = time_of_up;
       row.lastup = time_of_up;
+      row.claimable = row.claimable + upscount;
       row.totalups = upscount;
     });
   } 
@@ -160,6 +161,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
     _uppers.modify(listener_iterator, get_self(), [&]( auto& row ) {
       row.lastup = time_of_up;
       row.totalups += upscount;
+      row.claimable = row.claimable + upscount;
     });
   }//END if(results _uppers)
 }//END upsert_total()

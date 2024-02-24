@@ -123,7 +123,7 @@ using content_t = multi_index<"content"_n, content,
     uint32_t firstup;
     uint32_t lastup;
     uint32_t totalups;
-    uint32_t claimable; //TODO ensure this is reflected in the totals 
+    uint32_t claimable; //TODO ensure this is reflected in the totals, this is the total # of ups (* reward amount) the user can claim, not the amount of rewards
     uint64_t primary_key() const { return upsender.value; }
   };
   
