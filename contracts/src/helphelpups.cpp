@@ -40,14 +40,16 @@ uint32_t ups::find_tu(uint32_t tu_length = 0){
   return time_unit;
 }
 
-checksum256 ups::url_hash(const string& url) {
+checksum256 ups::url_hash(const string url) {
 
     string newurl = chopped_url(url);
     return eosio::sha256(newurl.data(), newurl.size());
 }
 
 // --- Returns URL after removing the protocol part and "www." --- //
-string ups::chopped_url(const string& url) {
+
+//TODO update to not include the domain in the link? Weigh benefits / costs
+string ups::chopped_url(const string url) {
     auto start = url.find("://");
     if (start != string::npos) {
         start += 3; // Move past "://"
@@ -64,7 +66,7 @@ string ups::chopped_url(const string& url) {
 }
 
 // --- Returns just the domain part of the URL as a name --- //
-name ups::url_domain_name(const string& url) {
+name ups::url_domain_name(const string url) {
 
     string domain_main = chopped_url(url);
     auto end = domain_main.find('/');

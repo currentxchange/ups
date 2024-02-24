@@ -30,7 +30,7 @@ void ups::upsertup(uint32_t upscount, name upsender, uint64_t contentid, bool ne
 }//END upsertup()
 
 // --- ROUTER prepares and calls upsertup() --- //
-void ups::upsertup_url(uint32_t upscount, name upsender, string& url ) {
+void ups::upsertup_url(uint32_t upscount, name upsender, string url ) {
     // Extract the domain name from the URL to use as scope for the content table
     //inline auto get_domain = parse_url(url, 0, 0, 1); 
     name domain = url_domain_name(url);
@@ -38,7 +38,7 @@ void ups::upsertup_url(uint32_t upscount, name upsender, string& url ) {
     
 
     // Use the domain to scope the content table
-    content_t contents(get_self(), domain.value);
+    content_t contents(get_self(), get_self().value);
 
     // --- Get the hash of the URL --- //
     checksum256 url_hash = ups::url_hash(url);
@@ -47,7 +47,7 @@ void ups::upsertup_url(uint32_t upscount, name upsender, string& url ) {
 
     // Search for the content by its hash within the scoped content table
     auto by_gudahash_index = contents.get_index<"bygudahash"_n>();
-    auto content_itr = by_gudahash_index.find(url_hash);
+    auto content_itr = by_gudahash_index.lower_bound(url_hash);
     check(content_itr != by_gudahash_index.end(), "⚡️ Linked content not found. Please register the provider + content URL before sending ups.");
 
     uint64_t contentid = content_itr->contentid;
@@ -272,7 +272,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
 
 
 // --- Handles adding both NFT content and URL content --- // TODO add to the new content_domain singleton
-void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const string& url = "", name domain = ""_n, name collection = ""_n, int32_t templateid = 0)
+void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const string url = "", name domain = ""_n, name collection = ""_n, int32_t templateid = 0)
 { 
     // --- Check if submitter is in providers table --- //
     require_auth(submitter);
@@ -285,11 +285,11 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
     int32_t longitude_int = 0;
 
     // --- Validate and format Latitude and Longitude --- //
-    if (latitude == 0.0 && longitude == 0.0){
+    if (latitude != 0.0 || longitude != 0.0){
         vector<int32_t> formatted_coords = validate_and_format_coords({latitude, longitude});
         latitude_int = formatted_coords[0];
         longitude_int = formatted_coords[1];
-    }
+    } 
 
     // --- Validate the Continent Subregion as a string or an int --- //
     if (!continent_subregion_name.empty() || continent_subregion_code != 0) {
@@ -319,7 +319,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
         check(itr == gudhash.end(), "⚡️ Content exists, send Ups now");
 
         // --- Insert NFT into content table -- //
-        contents.emplace(submitter, [&](auto& row) {
+        contents.emplace(get_self(), [&](auto& row) {
             row.contentid = contents.available_primary_key();
             row.domain = domain;
             row.submitter = submitter;
@@ -338,7 +338,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
     } else if ( is_nft ) {
       // --- Handle NFT --- //
       // --- Check the providers table --- //
-      content_provider_singleton content_prov(get_self(), templateid);
+      content_provider_singleton content_prov(get_self(), collection.value);
 
       // --- Ensure the collection is not already registered --- //
       check(content_prov.exists(), "⚡️ This collection is not registered. Use regnftcol first.");
@@ -358,7 +358,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
       uint32_t current_time = eosio::current_time_point().sec_since_epoch();
 
       // Insert new NFT content
-      _content.emplace(submitter, [&](auto& row) {
+      _content.emplace(get_self(), [&](auto& row) {
         row.contentid = _content.available_primary_key();
         row.domain = collection; // --- Using collection name as domain for NFTs
         row.submitter = submitter;

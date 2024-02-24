@@ -393,7 +393,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             check(contentid = std::stoull(parameter), "Content ID is a number, send the memo as: up|<contentid> ");
             upsertup(up_quantity, from, contentid, 0);
             return;
-        } else if (memo_man == "url" ||memo_man == "uplink" ) { 
+        } else if (memo_man == "url" || memo_man == "upurl" || memo_man == "link") { 
 
             upsertup_url(up_quantity, from, parameter);
             return;

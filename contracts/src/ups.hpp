@@ -194,8 +194,8 @@ using content_t = multi_index<"content"_n, content,
   void upsertup(uint32_t upscount, name upsender, uint64_t contentid, bool negative);
   void logup(uint32_t upscount, name upsender, uint64_t contentid);
   void remvcontent(uint64_t contentid);
-  void addcontent(name submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, int32_t templateid);
-  void upsertup_url(uint32_t upscount, name upsender, string& url);
+  void addcontent(name submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string url, name domain, name collection, int32_t templateid);
+  void upsertup_url(uint32_t upscount, name upsender, string url);
   
   void upsertup_nft(uint32_t upscount, name upsender, name collection, int32_t templateid);
   void upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, bool negative);
@@ -207,9 +207,9 @@ using content_t = multi_index<"content"_n, content,
   uint32_t find_tu(uint32_t momentuin, uint32_t tu_length);
   uint32_t find_tu(uint32_t tu_length);
   //auto parse_url(const string& url, bool hash_whole, bool chopped_whole, bool chopped_domain);
-  string chopped_url(const string& url);
-  checksum256 url_hash(const string& url);
-  name url_domain_name(const string& url);
+  string chopped_url(const string url);
+  checksum256 url_hash(const string url);
+  name url_domain_name(const string url);
   config check_config();
   std::optional<config> check_config(bool ignore_empty);
   bool isAuthorized(name collection, name user);
