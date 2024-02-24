@@ -2,6 +2,7 @@
 #include <eosio/asset.hpp>
 #include <eosio/crypto.hpp>
 #include <atomicassets-interface.hpp>
+#include <bluxbluxblux.hpp>
 #include <ups-web4.hpp>
 
 #include <cctype>
@@ -193,7 +194,7 @@ using content_t = multi_index<"content"_n, content,
   void upsertup(uint32_t upscount, name upsender, uint64_t contentid, bool negative);
   void logup(uint32_t upscount, name upsender, uint64_t contentid);
   void remvcontent(uint64_t contentid);
-  void addcontent(name submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, uint32_t templateid);
+  void addcontent(name submitter, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision , uint32_t postal_code, const string& url, name domain, name collection, int32_t templateid);
   void upsertup_url(uint32_t upscount, name upsender, string& url);
   
   void upsertup_nft(uint32_t upscount, name upsender, name collection, int32_t templateid);
@@ -240,7 +241,7 @@ using content_t = multi_index<"content"_n, content,
 
   ACTION regdomain(const name& submitter, const string& url, const string& country_iso3);
 
-  ACTION setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier_percent, uint32_t timeunit);
+  ACTION setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, uint32_t reward_multiplier_percent, uint32_t timeunit);
 
   //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 

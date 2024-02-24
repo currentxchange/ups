@@ -142,3 +142,10 @@ Didn't really need this because of improved indexing on content table
   > locations_t;
 
 /*/
+
+
+
+  //using internallog_t = multi_index<name("internallog"), internallog>;
+
+
+    void updateupper(uint32_t upscount, name upsender);

@@ -126,7 +126,7 @@ ACTION ups::regnftcol(const name& submitter, const name& collection, string& cou
 ACTION ups::addurl(name submitter, const string& url, const name& domain, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0) { 
     
     name collection = ""_n;
-    uint32_t templateid = 0;
+    int32_t templateid = 0;
     config conf = check_config();
 
     // --- Uncomment to allow free registration of content --- //
@@ -294,7 +294,7 @@ ACTION ups::pauseups(bool pause) {
 }
 
 // --- Action to set configuration --- //
-ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, double reward_multiplier_percent, uint32_t timeunit) {
+ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name reward_token_contract, symbol reward_token_symbol, asset one_up_amount, asset one_reward_amount, bool pay_submitter, bool pay_upsender, uint32_t reward_multiplier_percent, uint32_t timeunit) {
     // --- Ensure the action is authorized by the contract itself --- //
     check(has_auth(get_self()), "Only contract owner can set the config"); 
 
@@ -333,7 +333,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     new_conf.timeunit = timeunit; // This cannot change once  Ups are made. 
     new_conf.pay_submitter = pay_submitter;
     new_conf.pay_upsender = pay_upsender;
-    new_conf.paused_rewards = false; // --- Defaults to not be paused
+    new_conf.paused_rewards = false; // --- Defaults to not be paused, can't set pause from setconfig
     new_conf.paused_ups = false;
 
     // --- Set the new config in the singleton --- //
@@ -404,12 +404,12 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             name collection = name(parameter.substr(0, delimiter_pos)); // first part 
 
         
-            check(templateid = std::stoul(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
+            check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
             upsertup_nft(up_quantity, from, collection, templateid);
 
             return;
-        } else if (memo_man == "addurl" ||memo_man == "link" ) {
-            addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
+        } else if (memo_man == "addurl" ||memo_man == "addlink" ) {
+            ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
             return;
         } else if (memo_man == "addnft") { // format nft|collection|tokenid  
             int32_t templateid;
@@ -418,8 +418,8 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             // --- Split memo into collection name and template id --- //
             name collection = name(parameter.substr(0, delimiter_pos)); // first part
             
-            check(templateid = std::stoul(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
-            addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
+            check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
+            ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
             return;
         } /*/else if (memo.size() <= 12) {
             domain = parse_url(parameter);

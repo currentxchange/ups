@@ -265,14 +265,14 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
         permission_level{get_self(), "active"_n},
         conf.reward_token_contract, 
         "transfer"_n,
-        std::make_tuple(get_self(), receiver, total_payment, string("Rewards for "+receiver.to_string()))
+        std::make_tuple(get_self(), get_self(), total_payment, string("Rewards for "+receiver.to_string()))
     ).send();
   }
 }//END pay_iou()
 
 
 // --- Handles adding both NFT content and URL content --- // TODO add to the new content_domain singleton
-void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const string& url = "", name domain = ""_n, name collection = ""_n, uint32_t templateid = 0)
+void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0, const string& url = "", name domain = ""_n, name collection = ""_n, int32_t templateid = 0)
 { 
     // --- Check if submitter is in providers table --- //
     require_auth(submitter);

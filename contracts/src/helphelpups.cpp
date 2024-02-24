@@ -110,13 +110,16 @@ bool ups::isAuthorized(name collection, name user)
     }//END isAuthorized()
 
 // --- Converts a normal string to the name of a enum entry --- //
+char to_upper(char c) {
+    return std::toupper(static_cast<unsigned char>(c));
+}
+
 string ups::normalize_enum_name(const string& input) {
     string output = input;
-    std::transform(output.begin(), output.end(), output.begin(), [](unsigned char c) { return std::toupper(c); });
+    std::transform(output.begin(), output.end(), output.begin(), to_upper);
     std::replace(output.begin(), output.end(), ' ', '_');
     return output;
 }
-
 /*/---
 INFO this can be moved to the commented table in ups.hpp, or a web4.tetra contract that has the values and can be referenced
 Pending testing
@@ -703,5 +706,7 @@ vector<int32_t> ups::validate_and_format_coords(const vector<double>& coords) {
     int32_t formatted_latitude = static_cast<int32_t>(latitude * 10000); // Scaling to maintain 4 decimal digits
     int32_t formatted_longitude = static_cast<int32_t>(longitude * 10000); // Scaling to maintain 4 decimal digits
 
-    return {formatted_latitude, formatted_longitude};
+    vector<int32_t> formatted_coords(formatted_latitude, formatted_longitude);
+
+    return formatted_coords;
 }

@@ -399,7 +399,7 @@
                 },
                 {
                     "name": "reward_multiplier_percent",
-                    "type": "float64"
+                    "type": "uint32"
                 },
                 {
                     "name": "timeunit",
