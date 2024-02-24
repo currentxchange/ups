@@ -102,6 +102,7 @@ void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, boo
     _upslog.emplace(get_self(), [&]( auto& row ) {
       row.upid = _upslog.available_primary_key();
       row.contentid = contentid;
+      row.upsender = upsender;
       row.totalups = upscount;
       row.tuid = now_tu;
     });
@@ -114,9 +115,9 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
 
   // --- Update / Insert _totals record of cumulative song Ups --- //
   totals_t _totals(get_self(), contentid);
-  auto total_iterator = _totals.find(contentid);
+  auto total_iterator = _totals.begin();
   uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
-  if( total_iterator == _totals.end() )
+  if( total_iterator == _totals.end())
   { // -- Make New Record
     _totals.emplace(get_self(), [&]( auto& row ) {
       row.contentid = contentid;
@@ -147,7 +148,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
   auto listener_iterator = _uppers.find(contentid);
   if( listener_iterator == _uppers.end() )
   {
-    _uppers.emplace(upsender, [&]( auto& row ) {
+    _uppers.emplace(get_self(), [&]( auto& row ) {
       row.upsender = upsender;
       row.firstup = time_of_up;
       row.lastup = time_of_up;
@@ -156,7 +157,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
   } 
   else 
   {
-    _uppers.modify(listener_iterator, upsender, [&]( auto& row ) {
+    _uppers.modify(listener_iterator, get_self(), [&]( auto& row ) {
       row.lastup = time_of_up;
       row.totalups += upscount;
     });
