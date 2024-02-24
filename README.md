@@ -1,6 +1,10 @@
 # Ups 
 🌎🔺 Localized curation contract for Antelope blockchains
 
+Ups on WAX testnet ⚗️
+[testnet.waxblock.io/account/upsupsupsups](https://testnet.waxblock.io/account/upsupsupsups)
+
+
 # What it does 🤘🚀
 
 The Ups contract creates a Reddit-like upvoting experience on WAX blockchain. 
@@ -69,27 +73,29 @@ Key Concepts:
 - Rewards are also quantized to an amount of a token (can be same or different token)
 - 1 Up generates 1 reward for the sumbitter, and one for the upvoter, unless they are the same account, in which case just the upvote reward is registered. 
 
-> By default, the upvoter and the content sumbitter **get 1 reward unit each** for each upvote. (owners can turn off either getting rewards) There isn't a way to know the true author of content on-chain, so we can't reward the creator directly, it's up to them to submit their content first if they want the reward. 
+> By default, the upvoter and the content sumbitter **get 1 reward unit each** for each upvote. (owners can turn off either party getting rewards) There isn't a way to know the true author of content on-chain, so we can't reward the creator directly, it's up to them to submit their content first if they want the reward. 
 
 
 
 
 ### For Content Providers:
 
-Step 1: Register your domain or NFT collection using `regdomain` for domains or regnftcol for NFT collections. 
+Step 1: Manage your content and rewards configuration with the `setconfig` action to define reward parameters and token settings. 
 
-Step 2: Add content URLs with addurl action or NFTs using addnft. Ensure your content is eligible for upvotes. 
+Step 2: Register your domain or NFT collection using `regdomain` for domains or regnftcol for NFT collections. 
 
-Step 3: Manage your content and rewards configuration with the setconfig action to define reward parameters and token settings. 
+Step 3: Add content URLs with `addurl` action or NFTs using `addnft`. 
+
+
 
 
 ### For Upvoters:
 
-To upvote a content ID, send tokens to the contract with the memo formatted as up|<contentid>, where <contentid> is the ID of the content you wish to upvote.
-
 To upvote via URL, send tokens with the memo url|<your url>, replacing <your url> with the actual URL of the content.
 
 To upvote an NFT, use the memo nft|<collection>|<templateid>, where <collection> is the name of the NFT collection and <templateid> is the ID of the template within that collection.
+
+To upvote when you know the content ID, send tokens to the contract with the memo formatted as up|<contentid>, where <contentid> is the ID of the content you wish to upvote.
 
 Use the payup action to claim your rewards. This action calculates and distributes rewards based on the number of upvotes you've contributed and the contract's reward configuration.
 
@@ -107,7 +113,7 @@ Content can (optionally) be assigned a location with, with four levels provided.
 
 This means you can hold competetions for the best content in North America, Brazil, etc.  
 
-## 🚫 Pausing Rewards & Upvotes
+## Saftey 👷‍♂️ Rewards & Upvotes ⟁
 
 Key Comprehension:
 Rewards are inflationary, upvotes are deflationary. 
@@ -139,7 +145,14 @@ The reward system is defined by the `setconfig` action, which sets parameters li
 
 # ⚠️ Contract Status 
 
-Contract is currently compiled but lacking testing. No audit has been performed. Please do not use Ups contract until release 1.0.0 is released. 
+Contract is currently compiling but lacking testing. No audit has been performed. Please do not use Ups contract unless on testnet until release 1.0.0 is posted and license.md has been added to the repo. 
 
-## 🧑‍⚖️ Disclaimer
-This contract and its functionalities are provided "AS IS" without warranty of any kind. Users should exercise caution and perform their due diligence when interacting with smart contracts on the blockchain.
+Please open any issues you encounter using this contract on testnet. 
+
+Download this repo instead of the release for the latest version. 
+
+Ups on WAX testnet ⚗️
+[testnet.waxblock.io/account/upsupsupsups](https://testnet.waxblock.io/account/upsupsupsups)
+
+## 🧑‍⚖️ Liability waiver
+This contract and its functionalities are "AS IS" without warranty of any kind. Always carefully check and compile the latest version of the code on your local environment. Understand the code and it's economic implications before implementing. We are not responsible for  Users should exercise caution and perform their due diligence when interacting with smart contracts on the blockchain.
