@@ -15,9 +15,9 @@ ACTION ups::payup(name upsender = ""_n) {
 ACTION ups::updatecont(name& submitter, uint64_t contentid, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0){
 
     // --- Get the content --- //
-    content_t contents(get_self(), get_self().value);
-    auto itr = contents.find(contentid);
-    check(itr != contents.end(), "⚡️ Content with the specified ID does not exist.");
+    content_t _contents(get_self(), get_self().value);
+    auto itr = _contents.find(contentid);
+    check(itr != _contents.end(), "⚡️ Content with the specified ID does not exist.");
 
     check(has_auth(itr->submitter) || has_auth(get_self()) , "⚡️ Only the submitter "+ itr->submitter.to_string() +" can update content.");
 
@@ -44,7 +44,7 @@ ACTION ups::updatecont(name& submitter, uint64_t contentid, double latitude = 0.
     } 
 
     // --- Update the content record --- //
-    contents.modify(itr, get_self(), [&](auto& row) {
+    _contents.modify(itr, get_self(), [&](auto& row) {
         row.latitude = (latitude_int != 0) ? latitude : row.latitude; // CHANGE and see if it compiles 
         row.longitude = (longitude_int != 0) ? longitude : row.longitude;
         row.subcontinent = (subcontinent != 0) ? subcontinent : row.subcontinent;
@@ -214,12 +214,12 @@ ACTION ups::removeupper(name upsender) {
     }
 
     // --- Get content where upsender is the submitter --- //
-    content_t contents(get_self(), get_self().value);
-    auto submitter_idx = contents.get_index<"bysubmitter"_n>();
+    content_t _contents(get_self(), get_self().value);
+    auto submitter_idx = _contents.get_index<"bysubmitter"_n>();
     auto submitter_itr = submitter_idx.lower_bound(upsender.value);
 
     while (submitter_itr != submitter_idx.end() && submitter_itr->submitter == upsender) {
-        contents.modify(*submitter_itr, same_payer, [&](auto& row) {
+        submitter_idx.modify(submitter_itr, get_self(), [&](auto& row) {
             row.submitter = ""_n; // Set the submitter to an empty name
         });
         submitter_itr++;

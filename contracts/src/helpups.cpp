@@ -89,7 +89,7 @@ void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, boo
   for (; ups_itr != by_contentid_idx.end(); ++ups_itr) {
       if (ups_itr->upsender == upsender && ups_itr->tuid == now_tu) {
           // Matching entry found, update its totalups
-          by_contentid_idx.modify(ups_itr, eosio::same_payer, [&](auto& row) {
+          by_contentid_idx.modify(ups_itr, get_self(), [&](auto& row) {
               row.totalups = negative ? row.totalups - upscount : row.totalups + upscount;
           });
           found_up = true;
@@ -99,7 +99,7 @@ void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, boo
 
   if( !found_up )
   { // -- Make New Record
-    _upslog.emplace(upsender, [&]( auto& row ) {
+    _upslog.emplace(get_self(), [&]( auto& row ) {
       row.upid = _upslog.available_primary_key();
       row.contentid = contentid;
       row.totalups = upscount;
@@ -118,7 +118,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
   uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
   if( total_iterator == _totals.end() )
   { // -- Make New Record
-    _totals.emplace(upsender, [&]( auto& row ) {
+    _totals.emplace(get_self(), [&]( auto& row ) {
       row.contentid = contentid;
       row.totalups = upscount;
       row.updated = time_of_up;
@@ -127,13 +127,13 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
   else 
   { // -- Update Record 
     if(!negative){
-      _totals.modify(total_iterator, upsender, [&]( auto& row ) {
+      _totals.modify(total_iterator, get_self(), [&]( auto& row ) {
         row.contentid = contentid;
         row.totalups += upscount;
         row.updated = time_of_up;
       });
     } else { // Subtract the value from totals
-      _totals.modify(total_iterator, upsender, [&]( auto& row ) {
+      _totals.modify(total_iterator, get_self(), [&]( auto& row ) {
         row.contentid = contentid;
         row.totalups -= upscount;
         row.updated = time_of_up;
