@@ -72,21 +72,24 @@ void ups::upsertup_nft(uint32_t upscount, name upsender, name collection, int32_
 
 // --- Update running log of ups --- // TODO update to this contract
 void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, bool negative){
-  //NOTE negative should only be called for deletions (user gets removed from system)
+  //NOTE negative should only be called for deletions (after user gets removed from system)
 
-  uint32_t now_tu = find_tu(eosio::current_time_point().sec_since_epoch());
+  uint32_t now_tu = find_tu();
 
   // --- Add record to _upslog --- //
   upslog_t _upslog(get_self(), get_self().value);
   auto by_contentid_idx = _upslog.get_index<"bycontentid"_n>();
   auto ups_itr = by_contentid_idx.lower_bound(contentid);
+  auto ups_itr_end = by_contentid_idx.upper_bound(contentid);
+
+  //ups_itr = by_contentid_idx.lower_bound(content_itr->contentid);
 
 
 //TODO let user cancel their up befote timeunit expires, just action that calls this function with negative flag
 //TODO double-check we are updating the other totals table
   // Iterate through entries to find a match with upsender and now_tu
   bool found_up = false;
-  for (; ups_itr != by_contentid_idx.end(); ++ups_itr) {
+  for (; ups_itr != ups_itr_end ; ++ups_itr) {
       if (ups_itr->upsender == upsender && ups_itr->tuid == now_tu) {
           // Matching entry found, update its totalups
           by_contentid_idx.modify(ups_itr, get_self(), [&](auto& row) {
@@ -115,7 +118,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
 
   // --- Update / Insert _totals record of cumulative song Ups --- //
   totals_t _totals(get_self(), contentid);
-  auto total_iterator = _totals.begin();
+  auto total_iterator = _totals.find(contentid);
   uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
   if( total_iterator == _totals.end())
   { // -- Make New Record
