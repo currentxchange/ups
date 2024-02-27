@@ -218,7 +218,7 @@ ACTION ups::removeupper(name upsender) {
     }
 
     // Check if there are no more records in the ious table related to the upsender
-    if ( _ious.find(upsender.value) == _ious.end()) {
+    if ( upcatcher_itr == _ious.end()) {
         // Access the uppers table and remove the upsender
         uppers_t uppers(get_self(), get_self().value);
         auto upper_itr = uppers.find(upsender.value);

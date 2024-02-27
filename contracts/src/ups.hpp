@@ -134,26 +134,20 @@ using content_t = multi_index<"content"_n, content,
   // TODO ensure we are now scoping to contentid
   // CHECK that we are using the indexes to get the upsender, etc
   TABLE ious {
-    uint64_t iouid;
     uint64_t contentid;
-    name upcatcher;
     uint32_t upscount;
     uint32_t initiated;
     uint32_t updated; 
 
-    uint64_t by_upcatcher() const { return upcatcher.value; }
-    uint64_t by_contentid() const { return contentid; }
     uint64_t by_upscount() const { return static_cast<uint64_t>(upscount); }
     uint64_t by_initiated() const { return static_cast<uint64_t>(initiated); }
     uint64_t by_updated() const { return static_cast<uint64_t>(updated); }
     
-    uint64_t primary_key() const { return iouid; }
+    uint64_t primary_key() const { return contentid; }
   };
 
   using ious_t = multi_index<name("ious"), ious,
-    eosio::indexed_by<"byupcatcher"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upcatcher>>,
     eosio::indexed_by<"byupscount"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_upscount>>,
-    eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_contentid>>,
     eosio::indexed_by<"byinitiated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_initiated>>,
     eosio::indexed_by<"byupdated"_n, eosio::const_mem_fun<ious, uint64_t, &ious::by_updated>>
   >;

@@ -176,22 +176,21 @@ void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t contentid, bool
     // --- Find current time sec --- //
     uint32_t current_time = eosio::current_time_point().sec_since_epoch();
 
+
+
     // --- Upsert IOU for a given receiver and sender --- //
     // --- Pay the submitter if configured --- //
     if (conf.pay_submitter == 1) {
         ious_t _ious(get_self(), submitter.value);
-        auto iou_content_idx = _ious.get_index<"bycontentid"_n>();
-        auto iou_itr = iou_content_idx.find(contentid);
-        if (iou_itr != iou_content_idx.end()) {
-            iou_content_idx.modify(iou_itr, get_self(), [&](auto& row) {
+        auto iou_itr = _ious.find(contentid);
+        if (iou_itr != _ious.end()) {
+            _ious.modify(iou_itr, get_self(), [&](auto& row) {
                 row.upscount = subtract ? row.upscount - upscount : row.upscount + upscount;
                 row.updated = current_time;
             });
         } else if (!subtract) {
             _ious.emplace(get_self(), [&](auto& row) {
-                row.iouid = _ious.available_primary_key();
                 row.contentid = contentid;
-                row.upcatcher = submitter;
                 row.upscount = upscount;
                 row.initiated = current_time;
                 row.updated = current_time;
@@ -202,19 +201,16 @@ void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t contentid, bool
     // --- Pay the upsender if it's a different account --- //
     if (conf.pay_upsender == 1 && submitter != upsender) {
         ious_t _ious(get_self(), upsender.value);
-        auto iou_content_idx = _ious.get_index<"bycontentid"_n>();
-        auto iou_itr = iou_content_idx.find(contentid);
+        auto iou_itr_upsender = _ious.find(contentid);
 
-        if (iou_itr != iou_content_idx.end()) {
-            iou_content_idx.modify(iou_itr, get_self(), [&](auto& row) {
+        if (iou_itr_upsender != _ious.end()) {
+            _ious.modify(iou_itr_upsender, get_self(), [&](auto& row) {
                 row.upscount = subtract ? row.upscount - upscount : row.upscount + upscount;
                 row.updated = current_time;
             });
         } else if (!subtract) {
             _ious.emplace(get_self(), [&](auto& row) {
-                row.iouid = _ious.available_primary_key();
                 row.contentid = contentid;
-                row.upcatcher = upsender;
                 row.upscount = upscount;
                 row.initiated = current_time;
                 row.updated = current_time;
@@ -249,7 +245,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
   while(iou_itr != _ious.end() && records_processed <= maxpayments){
     paid += iou_itr->upscount; 
-    ious_to_erase.push_back(iou_itr->iouid); // Track IOU IDs for deletion
+    ious_to_erase.push_back(iou_itr->contentid); // Track IOU IDs for deletion
     iou_itr++;
   }
 
@@ -258,8 +254,8 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
     total_payment *= paid * (conf.reward_multiplier_percent / 100);
 
       // --- Erase paid IOUs from the table --- //
-  for(auto& iouid: ious_to_erase){
-    auto itr = _ious.find(iouid);
+  for(auto& snipecontentid: ious_to_erase){
+    auto itr = _ious.find(snipecontentid);
     if(itr != _ious.end()){
         _ious.erase(itr);
     }

@@ -242,16 +242,8 @@
             "base": "",
             "fields": [
                 {
-                    "name": "iouid",
-                    "type": "uint64"
-                },
-                {
                     "name": "contentid",
                     "type": "uint64"
-                },
-                {
-                    "name": "upcatcher",
-                    "type": "name"
                 },
                 {
                     "name": "upscount",
