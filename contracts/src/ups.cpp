@@ -350,82 +350,83 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 [[eosio::on_notify("*::transfer")]] void ups::up_catch( const name from, const name to, const asset quantity, const string memo )
 {  
 
-    if (from == _self || to != _self) return;
+    if (to == get_self()){
+
+        // --- Checks + Set up Variables --- //
+        config conf = check_config();
+        check(!conf.paused_ups, "Ups are currently paused.");
+        check(get_first_receiver() == conf.up_token_contract, "This isn't the correct Up token.");
+        uint64_t up_quantity; 
+        check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
+        check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
+
+        //TODO add refund of any token that isn't divisible
+
+        name content_name; // --- To parse URL if needed 
+
+        string stripped_memo;
+        for (char c : memo) {
+            if (c != ' ') {
+                stripped_memo += c;
+            }
+        }
+
+
+        // --- Check for '|' in memo --- //
+        size_t delimiter_pos = stripped_memo.find('|');
+        if (delimiter_pos != string::npos) {
+            // --- Split memo into function name and parameter --- //
+            string memo_man = stripped_memo.substr(0, delimiter_pos); // first part of URL
+            string parameter = stripped_memo.substr(delimiter_pos + 1); // second part of URL
+            name domain;
     
-    // --- Checks + Set up Variables --- //
-    config conf = check_config();
-    check(!conf.paused_ups, "Ups are currently paused.");
-    check(get_first_receiver() == conf.up_token_contract, "This isn't the correct Up token.");
-    uint64_t up_quantity; 
-    check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
-    check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
+            // --- Call the function based on memo_man --- //
+            if (memo_man == "up") {
+                // --- Send up using contentID --- //
+                uint64_t contentid;
+                check(contentid = std::stoull(parameter), "Content ID is a number, send the memo as: up|<contentid> ");
+                upsertup(up_quantity, from, contentid, 0);
+                return;
+            } else if (memo_man == "url" || memo_man == "upurl" || memo_man == "link") { 
 
-    //TODO add refund of any token that isn't divisible
+                upsertup_url(up_quantity, from, parameter);
+                return;
+            } else if (memo_man == "nft" ||memo_man == "upnft" ) {
+                int32_t templateid;
+                delimiter_pos = parameter.find('|');
+                check(delimiter_pos != string::npos, "Please send the memo as: nft|collection|templateid ");
+                name collection = name(parameter.substr(0, delimiter_pos)); // first part 
 
-    name content_name; // --- To parse URL if needed 
-
-    string sanitized_memo;
-    for (char c : memo) {
-        if (c != ' ') {
-            sanitized_memo += c;
-        }
-    }
-
-
-    // --- Check for '|' in memo --- //
-    size_t delimiter_pos = sanitized_memo.find('|');
-    if (delimiter_pos != string::npos) {
-        // --- Split memo into function name and parameter --- //
-        string memo_man = sanitized_memo.substr(0, delimiter_pos); // first part of URL
-        string parameter = sanitized_memo.substr(delimiter_pos + 1); // second part of URL
-        name domain;
- 
-        // --- Call the function based on memo_man --- //
-        if (memo_man == "up") {
-            // --- Send up using contentID --- //
-            uint64_t contentid;
-            check(contentid = std::stoull(parameter), "Content ID is a number, send the memo as: up|<contentid> ");
-            upsertup(up_quantity, from, contentid, 0);
-            return;
-        } else if (memo_man == "url" || memo_man == "upurl" || memo_man == "link") { 
-
-            upsertup_url(up_quantity, from, parameter);
-            return;
-        } else if (memo_man == "nft" ||memo_man == "upnft" ) {
-            int32_t templateid;
-            delimiter_pos = parameter.find('|');
-            check(delimiter_pos != string::npos, "Please send the memo as: nft|collection|templateid ");
-            name collection = name(parameter.substr(0, delimiter_pos)); // first part 
-
-        
-            check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
-            upsertup_nft(up_quantity, from, collection, templateid);
-
-            return;
-        } else if (memo_man == "addurl" ||memo_man == "addlink" ) {
-            ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
-            return;
-        } else if (memo_man == "addnft") { // format nft|collection|tokenid  
-            int32_t templateid;
-            delimiter_pos = parameter.find('|');
-            check(delimiter_pos != string::npos, "Please send the memo as: addnft|<collection>|<templateid> ");
-            // --- Split memo into collection name and template id --- //
-            name collection = name(parameter.substr(0, delimiter_pos)); // first part
             
-            check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
-            ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
-            return;
-        } /*/else if (memo.size() <= 12) {
-            domain = parse_url(parameter);
-            // --- Check if content is registered in _content --- //
+                check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
+                upsertup_nft(up_quantity, from, collection, templateid);
 
-        }/*/ else {
-            // Handle unknown memo
-            check (0, "Unknown memo, send contentid with up| or url| register/upvote or reg| to register");
+                return;
+            } else if (memo_man == "addurl" ||memo_man == "addlink" ) {
+                ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
+                return;
+            } else if (memo_man == "addnft") { // format nft|collection|tokenid  
+                int32_t templateid;
+                delimiter_pos = parameter.find('|');
+                check(delimiter_pos != string::npos, "Please send the memo as: addnft|<collection>|<templateid> ");
+                // --- Split memo into collection name and template id --- //
+                name collection = name(parameter.substr(0, delimiter_pos)); // first part
+                
+                check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
+                ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
+                return;
+            } /*/else if (memo.size() <= 12) {
+                domain = parse_url(parameter);
+                // --- Check if content is registered in _content --- //
+
+            }/*/ else {
+                // Handle unknown memo
+                check (0, "Unknown memo, Up with: up|<contentid>, upurl|<link>, upnft|<collection>|<templateid>, or register content with addurl|<url>, addnft|<collection>|<templateid>");
+            }
+        } else {
+            /// --- --- // 
+            check(0, "⚡️ Unknown memo, Up with: up|<contentid>, upurl|<link>, upnft|<collection>|<templateid>, or register content with addurl|<url>, addnft|<collection>|<templateid>");
         }
-    } else {
-        /// --- --- // 
-        check(0, "⚡️ Unknown memo, Up with: up|<contentid>, upurl|<link>, upnft|<collection>|<templateid>, or register content with addurl|<url>, addnft|<collection>|<templateid>");
     }
   
 } // END token transfer listener
