@@ -111,16 +111,14 @@ ACTION ups::regnftcol(const name& submitter, const name& collection, string& cou
     // --- Ensure the collection is not already registered --- //
     check(!content_prov.exists(), "Content provider already registered for this domain");
 
-/*/
+
     // --- Register the collection --- //
     content_provider new_provider;
-    new_provider.domain = collection,
-    new_provider.raw_domain = collection.to_string(),
-    new_provider.country = country
-/*/
+    new_provider.domain = collection;
+    new_provider.raw_domain = collection.to_string();
+    new_provider.country = country_code;
 
-// Check if this is .set syntaxx or not and scope
-   // content_prov.set(new_provider, submitter); // --- Submitter pays to register CHECK if this is correct or scope
+    content_prov.set(new_provider, submitter); // --- Submitter pays to register CHECK if this is correct or scope
 }
 
 ACTION ups::addurl(name submitter, const string& url, const name& domain, double latitude = 0.0, double longitude = 0.0, uint32_t continent_subregion_code = 0, uint32_t country_code = 0, const string& continent_subregion_name = "", const string& country_iso3 = "", uint32_t subdivision = 0, uint32_t postal_code = 0) { 
