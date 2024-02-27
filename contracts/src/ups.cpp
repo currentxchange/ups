@@ -101,7 +101,6 @@ ACTION ups::regnftcol(const name& submitter, const name& collection, string& cou
     // --- Require collection owners to register collection --- //
     //check(isAuthorized(collection, submitter), "Submitter is not authorized for this collection.");
 
-   
     // -- Assign country code from is_valid_country() --- //
     uint32_t country_code = is_valid_country(0, country);
 
@@ -110,7 +109,6 @@ ACTION ups::regnftcol(const name& submitter, const name& collection, string& cou
 
     // --- Ensure the collection is not already registered --- //
     check(!content_prov.exists(), "Content provider already registered for this domain");
-
 
     // --- Register the collection --- //
     content_provider new_provider;
@@ -131,8 +129,6 @@ ACTION ups::addurl(name submitter, const string& url, const name& domain, double
     //TODO debug real memo 
     //check(/*/has_auth(submitter) || /*/has_auth(get_self()), "Add linked content by sending " +conf.one_up_amount +" " + conf.up_token_symbol +" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
    check(/*/has_auth(submitter) || /*/has_auth(get_self()), "Add linked content by sending Up with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
-
-
 
     // --- Call dispatcher function --- // 
     addcontent(submitter, latitude, longitude, continent_subregion_code, country_code, continent_subregion_name, country_iso3, subdivision, postal_code, url, domain, collection, templateid);
@@ -156,6 +152,7 @@ ACTION ups::addnft(name& submitter, double latitude = 0.0, double longitude = 0.
 
     return;
 }//END addnft
+
 
 //TODO WARN needs update to remove the up records
 ACTION ups::remvcontent(uint64_t contentid = 0, name collection = ""_n, uint32_t template_id = 0) {
@@ -198,25 +195,22 @@ ACTION ups::removeupper(name upsender) {
     check(has_auth(upsender) || has_auth(get_self()), "Only "+upsender.to_string()+" can reset their account"); // Ensure only the contract can call this action 
 
     // --- Get the IOUs --- //
-    ious_t ious(get_self(), get_self().value);
-    //auto upsender_idx = ious.get_index<"byupsender"_n>();
-    auto upcatcher_idx = ious.get_index<"byupcatcher"_n>();
-
-    //auto upsender_itr = upsender_idx.lower_bound(upsender.value);
-    auto upcatcher_itr = upcatcher_idx.lower_bound(upsender.value);
+    ious_t _ious(get_self(), upsender.value);
+    auto upcatcher_itr = _ious.begin();
     int count = 0;
 
-    while (upcatcher_itr != upcatcher_idx.end() && upcatcher_itr->upcatcher == upsender && count < 36) {
-        upcatcher_itr = upcatcher_idx.erase(upcatcher_itr);
+    while (upcatcher_itr != _ious.end() && count < 99) {
+        _ious.erase(upcatcher_itr);
+        upcatcher_itr++;
         count++;
     }
 
     // --- Get content where upsender is the submitter --- //
     content_t _contents(get_self(), get_self().value);
     auto submitter_idx = _contents.get_index<"bysubmitter"_n>();
-    auto submitter_itr = submitter_idx.lower_bound(upsender.value);
+    auto submitter_itr = submitter_idx.find(upsender.value);
 
-    while (submitter_itr != submitter_idx.end() && submitter_itr->submitter == upsender) {
+    while (submitter_itr != submitter_idx.end() && submitter_itr->submitter == upsender ) {
         submitter_idx.modify(submitter_itr, get_self(), [&](auto& row) {
             row.submitter = ""_n; // Set the submitter to an empty name
         });
@@ -224,7 +218,7 @@ ACTION ups::removeupper(name upsender) {
     }
 
     // Check if there are no more records in the ious table related to the upsender
-    if ( upcatcher_idx.lower_bound(upsender.value) == upcatcher_idx.end()) {
+    if ( _ious.find(upsender.value) == _ious.end()) {
         // Access the uppers table and remove the upsender
         uppers_t uppers(get_self(), get_self().value);
         auto upper_itr = uppers.find(upsender.value);
@@ -233,13 +227,13 @@ ACTION ups::removeupper(name upsender) {
         } else { // --- Add the user to Purgatory so oracle can remove them TODO add readme explacountry about why this is needed
 
             internallog_t internal_log(get_self(), get_self().value);
-            check(internal_log.exists(), "");
+            check(internal_log.exists(), "Contract has not been set up");
 
             // Fetch the existing internal log record
             auto log = internal_log.get();
 
             // Check if the upsender is already in purgatory
-            if (std::find(log.purgatory.begin(), log.purgatory.end(), upsender) == log.purgatory.end()) {
+            if (find(log.purgatory.begin(), log.purgatory.end(), upsender) == log.purgatory.end()) {
                 // Add the upsender to purgatory
                 log.purgatory.push_back(upsender);
 
@@ -343,7 +337,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 
     // --- Set up the internal log --- //
     internallog_t internlog(get_self(), get_self().value);
-    internallog internlog_data = internlog.get_or_default(internallog{//CHECK does this need to set a variable?
+    internallog internlog_data = internlog.get_or_create(get_self(), internallog{//CHECK does this need to set a variable?
         .lastpay = current_time,
         .lastfullpay = current_time,
         .purgatory = vector<name>(), 
@@ -365,6 +359,8 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     uint64_t up_quantity; 
     check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
     check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
+
+    //TODO add refund of any token that isn't divisible
 
     name content_name; // --- To parse URL if needed 
 

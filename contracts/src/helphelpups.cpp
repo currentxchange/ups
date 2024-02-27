@@ -90,6 +90,11 @@ name ups::url_domain_name(const string url) {
         }
     }
 
+    // --- Truncate any characters after 12th character --- //
+    if (domain_part.size() > 12) {
+        domain_part = domain_part.substr(0, 12);
+    }
+
     return name(domain_part);
 }
 

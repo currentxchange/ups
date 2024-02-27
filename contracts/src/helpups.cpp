@@ -25,7 +25,7 @@ void ups::upsertup(uint32_t upscount, name upsender, uint64_t contentid, bool ne
         ups::upsert_total(upscount, upsender, contentid, negative);
 
         //  --- Call action to update IOU table ----- //
-        ups::upsert_ious(upscount, upsender, contentid, false);
+        ups::upsert_ious(upscount, upsender, contentid, negative);
     } //TODO else call removal functions (same with subtract bool)
 }//END upsertup()
 
@@ -36,7 +36,6 @@ void ups::upsertup_url(uint32_t upscount, name upsender, string url ) {
     name domain = url_domain_name(url);
     //delete get_domain;
     
-
     // Use the domain to scope the content table
     content_t contents(get_self(), get_self().value);
 
@@ -85,7 +84,7 @@ void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, boo
   //ups_itr = by_contentid_idx.lower_bound(content_itr->contentid);
 
 
-//TODO let user cancel their up befote timeunit expires, just action that calls this function with negative flag
+//TODO let user cancel their up before timeunit expires, just action that calls this function with negative flag
 //TODO double-check we are updating the other totals table
   // Iterate through entries to find a match with upsender and now_tu
   bool found_up = false;
@@ -116,10 +115,11 @@ void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, boo
 // --- Upsert _uppers and _totals --- // TODO update to this contract
 void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, bool negative){
 
-  // --- Update / Insert _totals record of cumulative song Ups --- //
-  totals_t _totals(get_self(), contentid);
-  auto total_iterator = _totals.find(contentid);
   uint32_t time_of_up = eosio::current_time_point().sec_since_epoch();
+
+  // --- Update / Insert _totals record of cumulative song Ups --- //
+  totals_t _totals(get_self(), get_self().value);
+  auto total_iterator = _totals.find(contentid);
   if( total_iterator == _totals.end())
   { // -- Make New Record
     _totals.emplace(get_self(), [&]( auto& row ) {
@@ -130,25 +130,16 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
   } 
   else 
   { // -- Update Record 
-    if(!negative){
-      _totals.modify(total_iterator, get_self(), [&]( auto& row ) {
-        row.contentid = contentid;
-        row.totalups += upscount;
-        row.updated = time_of_up;
-      });
-    } else { // Subtract the value from totals
-      _totals.modify(total_iterator, get_self(), [&]( auto& row ) {
-        row.contentid = contentid;
-        row.totalups -= upscount;
-        row.updated = time_of_up;
-      });
-    }
+    _totals.modify(total_iterator, get_self(), [&]( auto& row ) {
+      row.totalups = negative ? row.totalups - upscount : row.totalups + upscount;
+      row.updated = time_of_up;
+    });
 
   }//END if(results _totals)
 
   // --- Update / Insert _uppers record --- //
   uppers_t _uppers(get_self(), get_self().value);
-  auto listener_iterator = _uppers.find(contentid);
+  auto listener_iterator = _uppers.find(upsender.value);
   if( listener_iterator == _uppers.end() )
   {
     _uppers.emplace(get_self(), [&]( auto& row ) {
@@ -164,14 +155,13 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
     _uppers.modify(listener_iterator, get_self(), [&]( auto& row ) {
       row.lastup = time_of_up;
       row.totalups += upscount;
-      row.claimable = row.claimable + upscount;
+      row.claimable = row.claimable + upscount; //CHECK we are uodating this when clearing IOU records 
     });
   }//END if(results _uppers)
 }//END upsert_total()
 
 // --- Upsert IOUs --- //
-void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t contentid, bool subtract) {
-    //require_auth(get_self()); //CHECK this would make it fail unless we call it?
+void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t contentid, bool subtract = 0) {
 
     // --- Access the config table and ensure rewards are happening --- //
     config conf = check_config(); 
@@ -187,38 +177,49 @@ void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t contentid, bool
     uint32_t current_time = eosio::current_time_point().sec_since_epoch();
 
     // --- Upsert IOU for a given receiver and sender --- //
-      auto upsert_iou = [&](name receiver, bool subtract) {
-        ious_t ious_table(get_self(), receiver.value);
-        auto iou_idx = ious_table.get_index<"bycontentid"_n>();
-        auto iou_itr = iou_idx.lower_bound(contentid);
-
-        if (iou_itr != iou_idx.end()) {
-            // Found matching IOU record, update it
-            iou_idx.modify(iou_itr, get_self(), [&](auto& row) {
+    // --- Pay the submitter if configured --- //
+    if (conf.pay_submitter == 1) {
+        ious_t _ious(get_self(), submitter.value);
+        auto iou_content_idx = _ious.get_index<"bycontentid"_n>();
+        auto iou_itr = iou_content_idx.find(contentid);
+        if (iou_itr != iou_content_idx.end()) {
+            iou_content_idx.modify(iou_itr, get_self(), [&](auto& row) {
                 row.upscount = subtract ? row.upscount - upscount : row.upscount + upscount;
                 row.updated = current_time;
             });
-            return;
-        }
-        // --- Insert new IOU --- //
-        if (!subtract) {
-            ious_table.emplace(get_self(), [&](auto& row) {
-                row.iouid = ious_table.available_primary_key();
+        } else if (!subtract) {
+            _ious.emplace(get_self(), [&](auto& row) {
+                row.iouid = _ious.available_primary_key();
                 row.contentid = contentid;
-                row.upcatcher = receiver;
+                row.upcatcher = submitter;
                 row.upscount = upscount;
                 row.initiated = current_time;
                 row.updated = current_time;
             });
         }
-    };//END lambda
-
-    // --- Pay the good people --- //
-    if (conf.pay_submitter) {
-        upsert_iou(submitter, subtract);
     }
-    if (conf.pay_upsender && submitter != upsender) {
-        upsert_iou(upsender, subtract);
+
+    // --- Pay the upsender if it's a different account --- //
+    if (conf.pay_upsender == 1 && submitter != upsender) {
+        ious_t _ious(get_self(), upsender.value);
+        auto iou_content_idx = _ious.get_index<"bycontentid"_n>();
+        auto iou_itr = iou_content_idx.find(contentid);
+
+        if (iou_itr != iou_content_idx.end()) {
+            iou_content_idx.modify(iou_itr, get_self(), [&](auto& row) {
+                row.upscount = subtract ? row.upscount - upscount : row.upscount + upscount;
+                row.updated = current_time;
+            });
+        } else if (!subtract) {
+            _ious.emplace(get_self(), [&](auto& row) {
+                row.iouid = _ious.available_primary_key();
+                row.contentid = contentid;
+                row.upcatcher = upsender;
+                row.upscount = upscount;
+                row.initiated = current_time;
+                row.updated = current_time;
+            });
+        }
     }
 
 }//END upsert_ious()
@@ -233,12 +234,12 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   config conf = check_config();
   check(!conf.paused_rewards, "⚡️ Rewards are currently paused. Check back later.");
 
-  // Find the receiver records is in the ious_table table
+  // Find the receiver records is in the _ious table
 
   // --- Get the IOUs --- //
-  ups::ious_t ious_table(get_self(), receiver.value); 
-  auto iou_itr = ious_table.begin();
-  check(iou_itr != ious_table.end(), "You are all paid up. Send some Ups and come back ⚡️ ");
+  ups::ious_t _ious(get_self(), receiver.value); 
+  auto iou_itr = _ious.begin();
+  check(iou_itr != _ious.end(), "You are all paid up. Send some Ups and come back ⚡️ ");
   
   // --- Calculate Payments --- //
   uint32_t paid = 0;
@@ -246,7 +247,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
 
   uint32_t records_processed = 0;
   // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
-  while(iou_itr != ious_table.end() && records_processed <= maxpayments){
+  while(iou_itr != _ious.end() && records_processed <= maxpayments){
     paid += iou_itr->upscount; 
     ious_to_erase.push_back(iou_itr->iouid); // Track IOU IDs for deletion
     iou_itr++;
@@ -258,9 +259,9 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
 
       // --- Erase paid IOUs from the table --- //
   for(auto& iouid: ious_to_erase){
-    auto itr = ious_table.find(iouid);
-    if(itr != ious_table.end()){
-        ious_table.erase(itr);
+    auto itr = _ious.find(iouid);
+    if(itr != _ious.end()){
+        _ious.erase(itr);
     }
   }
 
@@ -318,15 +319,15 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
       check(content_prov.exists(), "⚡️ Register the domain to start adding content for upvotes");
 
       // --- Check if content already exists --- //
-        content_t contents(get_self(), get_self().value);
-        auto gudhash = contents.get_index<"bygudahash"_n>();
+        content_t _content(get_self(), get_self().value);
+        auto gudhash = _content.get_index<"bygudahash"_n>();
         auto itr = gudhash.find(new_hash);
 
         check(itr == gudhash.end(), "⚡️ Content exists, send Ups now");
 
         // --- Insert NFT into content table -- //
-        contents.emplace(get_self(), [&](auto& row) {
-            row.contentid = contents.available_primary_key();
+        _content.emplace(get_self(), [&](auto& row) {
+            row.contentid = _content.available_primary_key();
             row.domain = domain;
             row.submitter = submitter;
             row.link = url_chopped;

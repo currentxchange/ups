@@ -101,7 +101,7 @@ using content_t = multi_index<"content"_n, content,
   
   using upslog_t = multi_index<name("upslog"), ups_log,
     eosio::indexed_by<"bycontentid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_contentid>>,
-      eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_upsender>>,
+    eosio::indexed_by<"byupsender"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_upsender>>,
     eosio::indexed_by<"byups"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_ups>>,
     eosio::indexed_by<"bytuid"_n, eosio::const_mem_fun<ups_log, uint64_t, &ups_log::by_tuid>>
   >;
@@ -131,7 +131,7 @@ using content_t = multi_index<"content"_n, content,
 
 
   // --- Store record of who to pay --- // 
-  // CHECK (in .cpp) that we are paying both the upsender + upcatcher
+  // TODO ensure we are now scoping to contentid
   // CHECK that we are using the indexes to get the upsender, etc
   TABLE ious {
     uint64_t iouid;
