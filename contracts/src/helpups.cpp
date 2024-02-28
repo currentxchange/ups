@@ -312,14 +312,14 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
 
       // --- Check if domain is registered --- //
       content_provider_singleton content_prov(get_self(), domain.value);
-      check(content_prov.exists(), "⚡️ Register the domain to start adding content for upvotes");
+      check(content_prov.exists(), "⚡️ Register the domain with regdomain to start adding content for upvotes");
 
       // --- Check if content already exists --- //
         content_t _content(get_self(), get_self().value);
         auto gudhash = _content.get_index<"bygudahash"_n>();
         auto itr = gudhash.find(new_hash);
 
-        check(itr == gudhash.end(), "⚡️ Content exists, send Ups now");
+        check(itr == gudhash.end(), "⚡️ Content is registered, now you can send Ups with "+ conf.one_up_amount.to_string() + "and memo: url|<your.url>");
 
         // --- Insert NFT into content table -- //
         _content.emplace(get_self(), [&](auto& row) {
@@ -355,7 +355,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
       ups::content_t _content(get_self(), get_self().value);
       auto by_external_id_idx = _content.get_index<"byextid"_n>(); // Assuming this is the secondary index for external_id
       auto nft_itr = by_external_id_idx.find(templateid);
-      check(nft_itr == by_external_id_idx.end(), "⚡️ NFT is already registered. Send Ups.");
+      check(nft_itr == by_external_id_idx.end(), "⚡️ NFT is already registered. Send Ups with "+ conf.one_up_amount.to_string() + "and memo: nft|<collection>|<templateid>);
 
       // --- Find current time sec --- //
       uint32_t current_time = eosio::current_time_point().sec_since_epoch();

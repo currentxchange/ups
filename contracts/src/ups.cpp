@@ -143,7 +143,7 @@ ACTION ups::addnft(name& submitter, double latitude = 0.0, double longitude = 0.
     
     // --- Uncomment to allow free registration of content --- //
     //check(has_auth(get_self()), "Add NFTs to be ranked by sending " conf.one_up_amount.to_string() +" " + conf.up_token_symbol.to_string()+" with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
-    check(has_auth(get_self()), "Add NFTs to be ranked by sending token with memo url|<your url>" ); //CHECK If this is the correct memo with the updated upcatcher
+    check(has_auth(get_self()), "Add NFTs to be ranked by sending "+ conf.one_up_amount.to_string() +" with memo addnft|<your>" ); //CHECK If this is the correct memo with the updated upcatcher
     // TODO Debug memo vars 
 
 
@@ -355,7 +355,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         // --- Checks + Set up Variables --- //
         config conf = check_config();
         check(!conf.paused_ups, "Ups are currently paused.");
-        check(get_first_receiver() == conf.up_token_contract, "This isn't the correct Up token.");
+        check(get_first_receiver() == conf.up_token_contract, "This isn't the correct Up token. Send "+  conf.one_up_amount.to_string());
         uint64_t up_quantity; 
         check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
         check(up_quantity >= 1, "Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
@@ -394,7 +394,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             } else if (memo_man == "nft" ||memo_man == "upnft" ) {
                 int32_t templateid;
                 delimiter_pos = parameter.find('|');
-                check(delimiter_pos != string::npos, "Please send the memo as: nft|collection|templateid ");
+                check(delimiter_pos != string::npos, "Please send the memo as: nft|<collection>|<templateid> ");
                 name collection = name(parameter.substr(0, delimiter_pos)); // first part 
 
             
@@ -408,7 +408,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             } else if (memo_man == "addnft") { // format nft|collection|tokenid  
                 int32_t templateid;
                 delimiter_pos = parameter.find('|');
-                check(delimiter_pos != string::npos, "Please send the memo as: addnft|<collection>|<templateid> ");
+                check(delimiter_pos != string::npos, "To register NFTs send the memo as: addnft|<collection>|<templateid> ");
                 // --- Split memo into collection name and template id --- //
                 name collection = name(parameter.substr(0, delimiter_pos)); // first part
                 
