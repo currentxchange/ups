@@ -155,4 +155,4 @@ Ups on WAX testnet ⚗️
 [testnet.waxblock.io/account/upsupsupsup3](https://testnet.waxblock.io/account/upsupsupsup3)
 
 ## 🧑‍⚖️ Liability waiver
-This contract and its functionalities are "AS IS" without warranty of any kind. Always carefully check and compile the latest version of the code on your local environment. Understand the code and it's economic implications before implementing. We are not responsible for  Users should exercise caution and perform their due diligence when interacting with smart contracts on the blockchain.
+This contract and its functionalities are "AS IS" without warranty of any kind. Always carefully check and compile the latest version of the code on your local environment. Understand the code and it's economic implications before implementing. We (any party involved) are not responsible for any losses or damages that may result in use of our tools including this. We do not offer support outside of Github issues and our [discord](https://discord.com/invite/u3kpj7xEWZ). Users should exercise caution and perform all due diligence when deploying interacting with smart contracts on the blockchain.
