@@ -2,7 +2,7 @@
 🌎🔺 Localized curation contract for Antelope blockchains
 
 Ups on WAX testnet ⚗️
-[testnet.waxblock.io/account/upsupsupsups](https://testnet.waxblock.io/account/upsupsupsups)
+[testnet.waxblock.io/account/upsupsupsup3](https://testnet.waxblock.io/account/upsupsupsup3)
 
 
 # What it does 🤘🚀
@@ -100,7 +100,7 @@ To upvote when you know the content ID, send tokens to the contract with the mem
 Use the payup action to claim your rewards. This action calculates and distributes rewards based on the number of upvotes you've contributed and the contract's reward configuration.
 
 
-# 😲 But wait, there's more! 
+# ⏳ For the future + past: Time Units
 
 All votes are assigned a time unit (a number of seconds considered one unit of time) and you can determine exactly what time unit every vote belongs to, allowing you to create **top-charts** that reset every time unit or series of time units. 
 
@@ -108,12 +108,12 @@ This system was originally designed to have one upvote token given to users per 
 
 This is one of the first implementations of the web4 concept of time units, based on the [Web4 Manifesto](https://github.com/dougbutner/web-4) written by the contract's author. 
 
-# 🤩 But wait, there's even more! 
+# 🌎 For the world 🤩
 Content can (optionally) be assigned a location with, with four levels provided. Included: Continent Subregions (M49), Country (ISO 3166 alpha-3), subdivision aka state, and postal code. Contract only verifies continent subregions and countrys, and allows for passing the three-digit code (like USA) as a string from the user's perspective. 
 
 This means you can hold competetions for the best content in North America, Brazil, etc.  
 
-## Saftey 👷‍♂️ Rewards & Upvotes ⟁
+## Saftey First 👷‍♂️ Rewards & Upvotes ⟁
 
 Key Comprehension:
 Rewards are inflationary, upvotes are deflationary. 
@@ -125,10 +125,10 @@ You can also set a rewards multiplier at any time.
 The only configuration you can't change after setting it is the Timeunit length AFTER the first upvote is made, as it's used to add a temporal aspect to the upvote system. 
 
 
-### Pausing Rewards
+### ✋ Pausing Rewards
 To temporarily halt reward distribution, the contract owner can use the `pauserewards` action, setting `pause` to `true`. This action stops the conversion of upvotes into claimable rewards without affecting the accumulation of upvotes.
 
-### Pausing Upvotes
+### 🔻 Pausing Upvotes
 The `pauseups` action allows the contract owner to freeze the upvote functionality by setting `pause` to `true`. This prevents new upvotes from being recorded, useful during maintenance or adjustments to the system.
 
 ## 🎁 Reward Mechanism
@@ -145,14 +145,14 @@ The reward system is defined by the `setconfig` action, which sets parameters li
 
 # ⚠️ Contract Status 
 
-Contract is currently compiling but lacking testing. No audit has been performed. Please do not use Ups contract unless on testnet until release 1.0.0 is posted and license.md has been added to the repo. 
+Contract is currently deployed on testnet with testing ongoing. We are still improving the contract. No audit has been performed. Please do not use Ups contract unless on testnet until release 1.0.0 is posted, indicating contract is ready. 
 
 Please open any issues you encounter using this contract on testnet. 
 
-Download this repo instead of the release for the latest version. 
+Clone this repo instead of the release for the latest version. 
 
 Ups on WAX testnet ⚗️
-[testnet.waxblock.io/account/upsupsupsups](https://testnet.waxblock.io/account/upsupsupsups)
+[testnet.waxblock.io/account/upsupsupsup3](https://testnet.waxblock.io/account/upsupsupsup3)
 
 ## 🧑‍⚖️ Liability waiver
 This contract and its functionalities are "AS IS" without warranty of any kind. Always carefully check and compile the latest version of the code on your local environment. Understand the code and it's economic implications before implementing. We are not responsible for  Users should exercise caution and perform their due diligence when interacting with smart contracts on the blockchain.
