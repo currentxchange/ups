@@ -391,6 +391,15 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 
                 upsertup_url(up_quantity, from, parameter);
                 return;
+            } else if (memo_man == "addnft") { // format nft|collection|tokenid  
+                int32_t templateid;
+                delimiter_pos = parameter.find('|');
+                check(delimiter_pos != string::npos, "To register NFTs send the memo as: addnft|<collection>|<templateid> ");
+                // --- Split memo into collection name and template id --- //
+                name collection = eosio::name(parameter.substr(0, delimiter_pos)); // first part
+                check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
+                ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
+                return;
             } else if (memo_man == "nft" ||memo_man == "upnft" ) {
                 int32_t templateid;
                 delimiter_pos = parameter.find('|');
@@ -405,21 +414,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             } else if (memo_man == "addurl" ||memo_man == "addlink" ) {
                 ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
                 return;
-            } else if (memo_man == "addnft") { // format nft|collection|tokenid  
-                int32_t templateid;
-                delimiter_pos = parameter.find('|');
-                check(delimiter_pos != string::npos, "To register NFTs send the memo as: addnft|<collection>|<templateid> ");
-                // --- Split memo into collection name and template id --- //
-                name collection = name(parameter.substr(0, delimiter_pos)); // first part
-                
-                check(templateid = std::stol(parameter.substr(delimiter_pos + 1)), "Template ID isn't a number. Please send the memo as: nft|<collection>|<templateid>") ; // second part of URL
-                ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, "", ""_n, collection, templateid);
-                return;
-            } /*/else if (memo.size() <= 12) {
-                domain = parse_url(parameter);
-                // --- Check if content is registered in _content --- //
-
-            }/*/ else {
+            } else {
                 // Handle unknown memo
                 check (0, "Unknown memo, Up with: up|<contentid>, upurl|<link>, upnft|<collection>|<templateid>, or register content with addurl|<url>, addnft|<collection>|<templateid>");
             }

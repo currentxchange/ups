@@ -319,7 +319,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
         auto gudhash = _content.get_index<"bygudahash"_n>();
         auto itr = gudhash.find(new_hash);
 
-        check(itr == gudhash.end(), "⚡️ Content is registered, now you can send Ups with "+ conf.one_up_amount.to_string() + "and memo: url|<your.url>");
+        check(itr == gudhash.end(), "⚡️ Content is registered, now you can send Ups with memo: url|<yoururl>");
 
         // --- Insert NFT into content table -- //
         _content.emplace(get_self(), [&](auto& row) {
@@ -355,7 +355,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
       ups::content_t _content(get_self(), get_self().value);
       auto by_external_id_idx = _content.get_index<"byextid"_n>(); // Assuming this is the secondary index for external_id
       auto nft_itr = by_external_id_idx.find(templateid);
-      check(nft_itr == by_external_id_idx.end(), "⚡️ NFT is already registered. Send Ups with "+ conf.one_up_amount.to_string() + "and memo: nft|<collection>|<templateid>);
+      check(nft_itr == by_external_id_idx.end(), "⚡️ NFT is already registered. Send Ups with memo: nft|<collection>|<templateid>");
 
       // --- Find current time sec --- //
       uint32_t current_time = eosio::current_time_point().sec_since_epoch();
