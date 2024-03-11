@@ -280,7 +280,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
     // --- Check if submitter is in providers table --- //
     require_auth(submitter);
 
-    bool is_nft = (collection != ""_n) && !templateid;
+    bool is_nft = ((collection != ""_n) && templateid > 0);
 
     uint32_t subcontinent = 0;
     uint32_t country = 0;
