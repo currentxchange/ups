@@ -27,7 +27,7 @@ ACTION ups::updatecont(name& submitter, uint64_t contentid, double latitude = 0.
     int32_t longitude_int = 0;
 
     // --- Validate and format Latitude and Longitude --- //
-    if (latitude == 0.0 && longitude == 0.0){
+    if (latitude != 0.0 || longitude != 0.0){
         vector<int32_t> formatted_coords = validate_and_format_coords({latitude, longitude});
         latitude_int = formatted_coords[0];
         longitude_int = formatted_coords[1];
