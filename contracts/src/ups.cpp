@@ -45,8 +45,8 @@ ACTION ups::updatecont(name& submitter, uint64_t contentid, double latitude = 0.
 
     // --- Update the content record --- //
     _contents.modify(itr, get_self(), [&](auto& row) {
-        row.latitude = (latitude_int != 0) ? latitude : row.latitude; // CHANGE and see if it compiles 
-        row.longitude = (longitude_int != 0) ? longitude : row.longitude;
+        row.latitude = (latitude_int != 0) ? latitude_int : row.latitude; // CHANGE and see if it compiles 
+        row.longitude = (longitude_int != 0) ? longitude_int : row.longitude;
         row.subcontinent = (subcontinent != 0) ? subcontinent : row.subcontinent;
         row.country = (country != 0) ? country : row.country;
         row.subdivision = (subdivision != 0) ? subdivision : row.subdivision;
