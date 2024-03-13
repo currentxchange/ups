@@ -702,16 +702,16 @@ uint32_t ups::is_valid_country(uint32_t code, const string country_iso3) {
 
 vector<int32_t> ups::validate_and_format_coords(const vector<double>& coords) {
     check(coords.size() == 2, "⚡️ Coordinates vector must contain two decimal numbers, first being latitude, second longitude.");
-    double latitude = coords[0];
-    double longitude = coords[1];
+    double latitude = coords[0] * 10000.0;
+    double longitude = coords[1] * 10000.0;
 
     // Validate Latitude and Longitude
     check(latitude >= -90.0 && latitude <= 90.0, "⚡️ Latitude must be between -90 and 90.");
     check(longitude >= -180.0 && longitude <= 180.0, "⚡️ Longitude must be between -180 and 180.");
 
     // Format to 4 decimal places and convert to integer with the decimal part
-    int32_t formatted_latitude = static_cast<int32_t>(latitude * 10000); // Scaling to maintain 4 decimal digits
-    int32_t formatted_longitude = static_cast<int32_t>(longitude * 10000); // Scaling to maintain 4 decimal digits
+    int32_t formatted_latitude = static_cast<int32_t>(latitude ); // Scaling to maintain 4 decimal digits
+    int32_t formatted_longitude = static_cast<int32_t>(longitude); // Scaling to maintain 4 decimal digits
 
     //vector<int32_t> formatted_coords(formatted_latitude, formatted_longitude);
     vector<int32_t> formatted_coords = {formatted_latitude, formatted_longitude};
