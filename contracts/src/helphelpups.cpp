@@ -713,7 +713,8 @@ vector<int32_t> ups::validate_and_format_coords(const vector<double>& coords) {
     int32_t formatted_latitude = static_cast<int32_t>(latitude * 10000); // Scaling to maintain 4 decimal digits
     int32_t formatted_longitude = static_cast<int32_t>(longitude * 10000); // Scaling to maintain 4 decimal digits
 
-    vector<int32_t> formatted_coords(formatted_latitude, formatted_longitude);
+    //vector<int32_t> formatted_coords(formatted_latitude, formatted_longitude);
+    vector<int32_t> formatted_coords = {formatted_latitude, formatted_longitude};
 
     return formatted_coords;
 }
