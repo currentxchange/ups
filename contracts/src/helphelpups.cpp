@@ -443,7 +443,10 @@ uint32_t ups::is_valid_country(uint32_t code, const string country_iso3) {
         else if (enum_name == "YEM") return 887;
         else if (enum_name == "ZMB") return 894;
         else if (enum_name == "ZWE") return 716;
-        else return 0; // Invalid name
+        else {
+            check(false, "⚡️ The three-letter country code isn't valid. Use ISO 3166-1 alpha-3 codes.");
+            return 0;
+        }
     } else {
         switch(code) {
             case 4: return 4;
@@ -695,7 +698,10 @@ uint32_t ups::is_valid_country(uint32_t code, const string country_iso3) {
             case 887: return 887;
             case 894: return 894;
             case 716: return 716;
-            default: return 0;
+            default: { 
+                check(false, "⚡️ The three-digit country code isn't valid. You can also use ISO 3166-1 three-letter codes in the correct field.");
+                return 0;
+            }
         }
     }
 }

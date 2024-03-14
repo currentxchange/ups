@@ -102,7 +102,7 @@ ACTION ups::regnftcol(const name& submitter, const name& collection, string& cou
     //check(isAuthorized(collection, submitter), "Submitter is not authorized for this collection.");
 
     // -- Assign country code from is_valid_country() --- //
-    uint32_t country_code = is_valid_country(0, country);
+    uint32_t country_code = is_valid_country(0, country_iso3);
 
     // --- Check the providers table --- //
     content_provider_singleton content_prov(get_self(), collection.value);

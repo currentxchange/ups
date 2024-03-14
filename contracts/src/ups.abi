@@ -320,7 +320,7 @@
                     "type": "name"
                 },
                 {
-                    "name": "country",
+                    "name": "country_iso3",
                     "type": "string"
                 }
             ]
