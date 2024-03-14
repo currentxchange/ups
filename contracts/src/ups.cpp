@@ -93,7 +93,7 @@ ACTION ups::configdomain(const name& submitter, const string& url, const name& u
 /*///---
 
 //TODO fix 
-ACTION ups::regnftcol(const name& submitter, const name& collection, string& country) {
+ACTION ups::regnftcol(const name& submitter, const name& collection, string& country_iso3) {
     // --- Check if collection exists + user is authorized  --- //
     check(has_auth(submitter), "The content submitter must sign."); 
     auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");

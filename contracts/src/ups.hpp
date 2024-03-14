@@ -239,7 +239,7 @@ using content_t = multi_index<"content"_n, content,
 
   //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 
-  ACTION regnftcol(const name& submitter, const name& nft_collection, string& country);
+  ACTION regnftcol(const name& submitter, const name& nft_collection, string& country_iso3);
 
   ACTION addurl( name submitter, const string& url, const name& domain, double latitude, double longitude, uint32_t continent_subregion_code, uint32_t country_code, const string& continent_subregion_name, const string& country_iso3, uint32_t subdivision, uint32_t postal_code);
     
