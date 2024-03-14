@@ -164,7 +164,7 @@ ACTION ups::remvcontent(uint64_t contentid = 0, name collection = ""_n, uint32_t
         auto itr = contents.find(contentid);
         check(itr != contents.end(), "Content with this ID does not exist.");
 
-        check((has_auth(itr->submitter) || has_auth(get_self())) , "Only the submitter or contract can remove the content.");
+        check((has_auth(itr->submitter) || has_auth(get_self())) , "⚡️ Only the submitter or contract can remove the content.");
 
         contents.erase(itr); // Remove the content from the table
     } 
@@ -182,9 +182,9 @@ ACTION ups::remvcontent(uint64_t contentid = 0, name collection = ""_n, uint32_t
             }
         }
 
-        check(found, "Nothing found for the specified collection and template ID.");
+        check(found, "⚡️ Nothing found for the specified collection and template ID.");
     } else {
-        check(false, "Either contentid or both collection and template_id must be provided.");
+        check(false, "⚡️ Either contentid or both collection and template_id must be provided.");
     }
 }//END remvcontent()
 
@@ -200,8 +200,7 @@ ACTION ups::removeupper(name upsender) {
     int count = 0;
 
     while (upcatcher_itr != _ious.end() && count < 99) {
-        _ious.erase(upcatcher_itr);
-        upcatcher_itr++;
+        upcatcher_itr = _ious.erase(upcatcher_itr); 
         count++;
     }
 

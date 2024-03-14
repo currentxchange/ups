@@ -235,7 +235,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   // --- Get the IOUs --- //
   ups::ious_t _ious(get_self(), receiver.value); 
   auto iou_itr = _ious.begin();
-  check(iou_itr != _ious.end(), "You are all paid up. Send some Ups and come back ⚡️ ");
+  check(iou_itr != _ious.end(), "⚡️ " + receiver.to_string() + " is all paid up. Send some Ups and come back ☀️");
   
   // --- Calculate Payments --- //
   uint32_t paid = 0;
