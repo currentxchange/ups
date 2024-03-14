@@ -140,11 +140,10 @@ Accumulated rewards are claimed through the `payup` action, which calculates the
 
 The contract itself can also call this action, so the owner could create an oracle that automatically distributes rewards.
 
-### 🛠 Configuration
-The reward system is defined by the `setconfig` action, which sets parameters like the reward token contract, amount per upvote, and any multipliers. 
+### 🛠 Configuration 
+The reward system is defined by the `setconfig` action, which sets parameters like the reward token contract, amount per upvote, and any multipliers. If you're using the waxblocks interface, you must type out `true` for the `pay_upsender` and `pay_submitter` options, as setting the value to `1` will not be recognized and `0` will be stored in the table, resulting in nobody getting paid (records won't be stored in the ious table). 
 
 # ⚠️ Contract Status 
-
 Contract is currently deployed on testnet with testing ongoing. We are still improving the contract. No audit has been performed. Please do not use Ups contract unless on testnet until release 1.0.0 is posted, indicating contract is ready. 
 
 Please open any issues you encounter using this contract on testnet. 
