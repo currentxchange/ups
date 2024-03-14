@@ -261,6 +261,18 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
     }
   }
 
+
+  // --- Update / Insert _uppers record --- //
+  uppers_t _uppers(get_self(), get_self().value);
+  auto listener_iterator = _uppers.find(upsender.value);
+  if( listener_iterator != _uppers.end() )
+      {
+        _uppers.modify(listener_iterator, get_self(), [&]( auto& row ) {
+          row.claimable = row.claimable - paid; 
+        });
+      }//END if(results _uppers)
+    }//END upsert_total()
+
   // --- Pay the people --- //
   if(total_payment.amount > 0 && paythem){
     // Use the eosio.token transfer action to send the payment
