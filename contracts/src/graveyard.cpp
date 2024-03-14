@@ -1,4 +1,7 @@
 
+
+  //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
+
 /*/
 // --- Returns Name from Domain or url checksum256 if whole thang --- //
 auto ups::parse_url(const string& url, bool hash_whole = false, bool chopped_whole = false, bool chopped_domain = false) { 
@@ -149,3 +152,24 @@ Didn't really need this because of improved indexing on content table
 
 
     void updateupper(uint32_t upscount, name upsender);
+
+/*/
+
+
+/*/
+#include <checkformat.hpp>
+#include <atomicdata.hpp>
+eosio-cpp -I eosio -I ../include -abigen -o ups.wasm ups.cpp --no-missing-ricardian-clause
+/*/
+
+
+
+/*/ --- SCOPED to name domain --- //
+Tetra_loc contains numeric codes for the Continent Subregions (M49), Country (ISO 3166 alpha-3), state (Standardized by country, .hpp in development), and postal code (if applicable, also in development)
+| Option | Double insertion into anothr scope allow for global cu
+--- Curation of content by location ----
+Find the top content in each area by indexes provided.
+- Init table scoped to name domain e.g. youtube
+- Use index for a location, like country
+- Then read the totals table for the # of ups
+/*/
