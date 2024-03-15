@@ -14,34 +14,28 @@ This allows us to be more flexible with what constitutes an up:
 
 // --- DISPATCHER Checks + calls logup() updateiou() and updatetotal() --- //
 void ups::upsertup(uint32_t upscount, name upsender, uint64_t contentid, bool negative = 0) {
-      require_auth( upsender );
+    require_auth( upsender );
     // --- Check content Id valid --- //
-    if (!negative){// TODO remove this + test
-        // --- Log the ups in ups table --- // 
-        ups::upsert_logup(upscount, upsender, contentid, negative);
-        
-        // --- Calls action to update the TOTALS table -- //
-        ups::upsert_total(upscount, upsender, contentid, negative);
+    // --- Log the ups in ups table --- // 
+    ups::upsert_logup(upscount, upsender, contentid, negative);
+    
+    // --- Calls action to update the TOTALS table -- //
+    ups::upsert_total(upscount, upsender, contentid, negative);
 
-        //  --- Call action to update IOU table ----- //
-        ups::upsert_ious(upscount, upsender, contentid, negative);
-    } //TODO else call removal functions (same with subtract bool)
+    //  --- Call action to update IOU table ----- //
+    ups::upsert_ious(upscount, upsender, contentid, negative);
 }//END upsertup()
 
 // --- ROUTER prepares and calls upsertup() --- //
 void ups::upsertup_url(uint32_t upscount, name upsender, string url ) {
     // Extract the domain name from the URL to use as scope for the content table
-    //inline auto get_domain = parse_url(url, 0, 0, 1); 
     name domain = url_domain_name(url);
-    //delete get_domain;
     
     // Use the domain to scope the content table
     content_t contents(get_self(), get_self().value);
 
     // --- Get the hash of the URL --- //
     checksum256 url_hash = ups::url_hash(url);
-
-    //auto parse_url(const string& url) -> checksum256;
 
     // Search for the content by its hash within the scoped content table
     auto by_gudahash_index = contents.get_index<"bygudahash"_n>();
@@ -80,11 +74,7 @@ void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, boo
   auto ups_itr = by_contentid_idx.lower_bound(contentid);
   auto ups_itr_end = by_contentid_idx.upper_bound(contentid);
 
-  //ups_itr = by_contentid_idx.lower_bound(content_itr->contentid);
-
-
-//TODO let user cancel their up before timeunit expires, just action that calls this function with negative flag
-//TODO double-check we are updating the other totals table
+  // --- Check for existing record --- //
   // Iterate through entries to find a match with upsender and now_tu
   bool found_up = false;
   for (; ups_itr != ups_itr_end ; ++ups_itr) {
@@ -94,7 +84,7 @@ void ups::upsert_logup(uint32_t upscount, name upsender, uint64_t contentid, boo
               row.totalups = negative ? row.totalups - upscount : row.totalups + upscount;
           });
           found_up = true;
-          break; // Exit the function after updating
+          break;
       }
   }
 
@@ -154,7 +144,7 @@ void ups::upsert_total(uint32_t upscount, name upsender, uint64_t contentid, boo
     _uppers.modify(listener_iterator, get_self(), [&]( auto& row ) {
       row.lastup = time_of_up;
       row.totalups += upscount;
-      row.claimable = row.claimable + upscount; //CHECK we are uodating this when clearing IOU records 
+      row.claimable = row.claimable + upscount; 
     });
   }//END if(results _uppers)
 }//END upsert_total()
@@ -228,8 +218,6 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   // --- Check that the rewards aren't paused --- //
   config conf = check_config();
   check(!conf.paused_rewards, "⚡️ Rewards are currently paused. Check back later.");
-
-  // Find the receiver records is in the _ious table
 
   // --- Get the IOUs --- //
   ups::ious_t _ious(get_self(), receiver.value); 
@@ -361,13 +349,13 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
       check(content_prov.exists(), "⚡️ This collection is not registered. Use regnftcol first.");
 
       // --- Check if templateid is valid --- //
-      atomicassets::templates_t templates_tbl(atomicassets::ATOMICASSETS_ACCOUNT, collection.value); /// CHECK mangled, should be 
+      atomicassets::templates_t templates_tbl(atomicassets::ATOMICASSETS_ACCOUNT, collection.value);
       auto template_itr = templates_tbl.find(templateid);
       check(template_itr != templates_tbl.end(), "⚡️ Template does not exist");
 
       // --- Check if NFT already exists in content_t --- //
       ups::content_t _content(get_self(), get_self().value);
-      auto by_external_id_idx = _content.get_index<"byextid"_n>(); // Assuming this is the secondary index for external_id
+      auto by_external_id_idx = _content.get_index<"byextid"_n>(); 
       auto nft_itr = by_external_id_idx.find(templateid);
       check(nft_itr == by_external_id_idx.end(), "⚡️ NFT is already registered. Send Ups with memo: nft|<collection>|<templateid>");
 
@@ -382,7 +370,7 @@ void ups::addcontent(name submitter, double latitude = 0.0, double longitude = 0
         row.external_id = templateid; // --- Set external_id to templateid for NFTs
         row.gudahash = checksum256(); 
         row.created = current_time;
-        row.latitude = latitude_int; // CHANGE and see if it compiles 
+        row.latitude = latitude_int; 
         row.longitude = longitude_int;
         row.subcontinent = (subcontinent != 0) ? subcontinent : 1;
         row.country = country;
