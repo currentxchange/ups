@@ -1,17 +1,15 @@
 
 // --- Gets config object and ensures contract not paused --- //
-ups::config ups::check_config() // --- RETURNS false or config type
+ups::config ups::check_config()
 {
     // --- Get config table --- //
     config_t conf_tbl(get_self(), get_self().value);
-
     bool existencial = conf_tbl.exists();
 
     // --- Ensure the rewards are set up --- //
     check(existencial, "⚡️ An administrator needs to set up this contract before you can use it.");
 
     // --- Return a blank object or the config object --- //
-
     const auto& conf = conf_tbl.get();
 
     // --- If both rewards and ups are paused, no go, shut down everything --- //
@@ -20,12 +18,9 @@ ups::config ups::check_config() // --- RETURNS false or config type
     return conf;
 }
 
-
-
 // --- Returns the current Time Unit --- //
 uint32_t ups::find_tu(uint32_t momentuin, uint32_t tu_length){
-  // 1561139700 is the first Time Unit in Seconds
-  uint32_t time_unit = (momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
+  uint32_t time_unit = (momentuin / tu_length); 
   return time_unit;
 }
 
@@ -36,7 +31,7 @@ uint32_t ups::find_tu(uint32_t tu_length = 0){
     tu_length = conf.timeunit;
   }
   uint32_t momentuin = eosio::current_time_point().sec_since_epoch();
-  uint32_t time_unit = (momentuin / tu_length);  // Divide by the length of a Time Unit in seconds
+  uint32_t time_unit = (momentuin / tu_length); 
   return time_unit;
 }
 
@@ -47,8 +42,6 @@ checksum256 ups::url_hash(const string url) {
 }
 
 // --- Returns URL after removing the protocol part and "www." --- //
-
-//TODO update to not include the domain in the link? Weigh benefits / costs
 string ups::chopped_url(const string url) {
     auto start = url.find("://");
     if (start != string::npos) {
@@ -79,12 +72,12 @@ name ups::url_domain_name(const string url) {
             continue;
         }
 
-        // Make uppercase letters lowercase
+        // --- Make uppercase letters lowercase --- //
         if (c >= 'A' && c <= 'Z') {
             c = c - 'A' + 'a';
         }
 
-        // Map invalid characters to letters
+        // --- Map invalid characters to letters --- //
         if ((c < 'a' || c > 'z') && (c < '1' || c > '5') && c != '.') {
             c = 'e' + (static_cast<unsigned char>(c) % 20) % (122 - 'e'); // Mapping is within 'e'-'z'
         }
@@ -105,13 +98,11 @@ bool ups::isAuthorized(name collection, name user)
         auto itrCollection = atomicassets::collections.require_find(collection.value, "⚡️ No collection with this name exists.");
         bool authorized = false;
         vector<name> authAccounts = itrCollection->authorized_accounts;
-        for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++)
-        {
-        if (user == name(*it))
-        {
-            authorized = true;
-            break;
-        }
+        for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++){
+            if (user == name(*it)){
+                authorized = true;
+                break;
+            }
         }
         return authorized;
     }//END isAuthorized()
@@ -128,9 +119,9 @@ string ups::normalize_enum_name(const string& input) {
     return output;
 }
 /*/---
-INFO this can be moved to the commented table in ups.hpp, or a web4.tetra contract that has the values and can be referenced
-Pending testing
-
+INFO If you're looking to extend this contract, you can instead store these values in a table. 
+We will release tables filled with this information in the web4.tetra contract to be referenced by any contract.
+For now, this is the best option for low setup and critical information only.
 /*///----
 
 uint32_t ups::is_valid_continent_subregion(uint32_t code, const string& name = "") {
@@ -160,7 +151,7 @@ uint32_t ups::is_valid_continent_subregion(uint32_t code, const string& name = "
         else if (enum_name == "POLYNESIA") return 61;
         else if (enum_name == "MICRONESIA") return 57;
         else if (enum_name == "ANTARCTICA") return 10;
-        else return 0; // Invalid name
+        else return 1; // Invalid name, defaults to global
     } else {
         switch(code) {
             case 1: return 1;   // WORLD
@@ -187,7 +178,7 @@ uint32_t ups::is_valid_continent_subregion(uint32_t code, const string& name = "
             case 61: return 61;   // POLYNESIA
             case 57: return 57;   // MICRONESIA
             case 10: return 10;   // ANTARCTICA
-            default: return 0;    // Invalid code
+            default: return 1;    // Invalid code, defaults to global
         }
     }
 }
@@ -711,18 +702,17 @@ vector<int32_t> ups::validate_and_format_coords(const vector<double>& coords) {
     double latitude = coords[0];
     double longitude = coords[1];
 
-    // Validate Latitude and Longitude
+    // --- Check Latitude and Longitude are in range --- //
     check(latitude >= -90.0 && latitude <= 90.0, "⚡️ Latitude must be between -90 and 90.");
     check(longitude >= -180.0 && longitude <= 180.0, "⚡️ Longitude must be between -180 and 180.");
 
     longitude *= 10000.0;
     latitude *= 10000.0;
 
-    // Format to 4 decimal places and convert to integer with the decimal part
+    // --- Format to 4 decimal places and convert to integer --- //
     int32_t formatted_latitude = static_cast<int32_t>(latitude); // Scaling to maintain 4 decimal digits
     int32_t formatted_longitude = static_cast<int32_t>(longitude); // Scaling to maintain 4 decimal digits
 
-    //vector<int32_t> formatted_coords(formatted_latitude, formatted_longitude);
     vector<int32_t> formatted_coords = {formatted_latitude, formatted_longitude};
 
     return formatted_coords;

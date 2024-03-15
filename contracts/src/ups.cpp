@@ -354,10 +354,22 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         check(!conf.paused_ups, "⚡️ Ups are currently paused.");
         check(get_first_receiver() == conf.up_token_contract, "⚡️ This isn't the correct Up token. Send "+  conf.one_up_amount.to_string());
         uint64_t up_quantity; 
-        check(up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount), "Please send exact amount, a multiple of "+ conf.one_up_amount.to_string());
-        check(up_quantity >= 1, "⚡️ Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
 
-        //FINALCHECK TODO add refund of any token that isn't divisible
+        asset excess_amount(quantity.amount % conf.one_up_amount.amount, quantity.symbol);
+
+        check(up_quantity >= 1, "⚡️ Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
+        
+        // Refund the excess amount if it's greater than zero
+        string refund_memo = "⟁ Refund of Up tokens, to avoid refunds send a multiple of "+ conf.one_up_amount.to_string();
+        if (excess_amount.amount > 0) {
+            action(
+                permission_level{get_self(), "active"_n},
+                conf.up_token_contract,
+                "transfer"_n,
+                std::make_tuple(get_self(), from, excess_amount, refund_memo)
+            ).send();
+        }
+
 
         name content_name; // To parse URL if needed 
 

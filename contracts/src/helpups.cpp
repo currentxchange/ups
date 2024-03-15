@@ -270,7 +270,7 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
         permission_level{get_self(), "active"_n},
         conf.reward_token_contract, 
         "transfer"_n,
-        std::make_tuple(get_self(), receiver, total_payment, string("💲 Ups Rewards for "+receiver.to_string()))
+        std::make_tuple(get_self(), receiver, total_payment, string("⟁ Ups Rewards for "+receiver.to_string()))
     ).send();
   }
 }//END pay_iou()
