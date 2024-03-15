@@ -5,9 +5,8 @@
 
 This file handles the dispatch of tokens, etc in a standardized way.
 This allows us to be more flexible with what constitutes an up:
-1) A token transfer with an up| memo
-2) A token stansfer with just a name that's a content ID (no special memo)
-3) An Up action on a contract that has been registered as a "content id" (no action for this yet)
+1) A token transfer with specialized memos defined in ups.cpp's token transfer handler
+2) A token transfer with just a memo of a content ID (no special format)
 
 /*/// ---
 
@@ -262,16 +261,19 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   }
 
 
-  // --- Update / Insert _uppers record --- //
-  uppers_t _uppers(get_self(), get_self().value);
-  auto listener_iterator = _uppers.find(upsender.value);
-  if( listener_iterator != _uppers.end() )
-      {
-        _uppers.modify(listener_iterator, get_self(), [&]( auto& row ) {
-          row.claimable = row.claimable - paid; 
-        });
-      }//END if(results _uppers)
-    }//END upsert_total()
+// --- Update Running total of claimable ups --- //
+  if(total_payment.amount > 0){
+    // --- Update / Insert _uppers record --- //
+    uppers_t _uppers(get_self(), get_self().value);
+    auto listener_iterator = _uppers.find(receiver.value);
+    if( listener_iterator != _uppers.end() ){
+      _uppers.modify(listener_iterator, get_self(), [&]( auto& row ) {
+        row.claimable = row.claimable - paid; 
+      });
+    }//END if(results _uppers)
+  }
+
+
 
   // --- Pay the people --- //
   if(total_payment.amount > 0 && paythem){
