@@ -3,7 +3,7 @@ const { assert } = require("chai");
 const blockchain = new Blockchain()
 
 // Load contract (use paths relative to the root of the project)
-const contract = blockchain.createContract('contract', 'build/contract/src')
+const contract = blockchain.createContract('contract', 'build/contract')
 
 /* Runs before each test */
 beforeEach(async () => {

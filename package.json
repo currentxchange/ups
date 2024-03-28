@@ -1,8 +1,13 @@
 {
-  "name": "your-project",
+  "name": "Ups",
   "version": "1.0.0",
-  "main": "index.js",
-  "license": "",
+  "description": "Localized curation contract for Antelope blockchains",
+  "main": "ups.hpp",
+  "contributors": [{
+    "name": "Douglas Butner",
+    "email": "douglas@cxc.world",
+  }],
+  "license": "MIT",
   "scripts": {
     "build": "npx fuckyea build",
     "deploy": "npx fuckyea deploy",

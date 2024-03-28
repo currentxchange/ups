@@ -1,4 +1,5 @@
 
+//TODO let user cancel their up before timeunit expires, just action that calls this function with negative flag
 
   //ACTION configdomain(const name& submitter, const string& url, const name& up_token_contract, const symbol& up_token_symbol, const name& reward_token_contract, const symbol& reward_token_symbol, const asset& one_up_amount, const asset& one_reward_amount);
 
@@ -173,3 +174,7 @@ Find the top content in each area by indexes provided.
 - Use index for a location, like country
 - Then read the totals table for the # of ups
 /*/
+
+
+
+{"msg": "succeeded", "keys": {"active_key": {"public": "EOS5cdMeqUkXyTfqpiLhDTfZyGx1VuRuLFdGozJDr2d2L9r3iw1i6", "private": "5KiDctDdD2uTqtbKq3NcpDvBnW8oHTxFmGLckk7v3gxt5MhDuy6"}, "owner_key": {"public": "EOS5Yk4FQChWb21RhGdDyvZ43hnbEGJW9VwqjyzK8Wvw1RSu5ckhF", "private": "5JJ6kk6Sappoqd4CpKGzXUqhDcqQRqZ8NVHYsbFXXVg5FepaQRk"}}, "account": "upsupsupsup4"}
