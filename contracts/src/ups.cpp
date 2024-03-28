@@ -7,10 +7,10 @@ ACTION ups::payup(name upsender = ""_n) {
     Commented out by default, action allows for anyone to call the action for contract to pay other people with their CPU. Contract still pays RAM
     /*/
 
-    //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.")
+    //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.");
 
     // --- Send to the payment dispatcher --- //
-    pay_iou(0, upsender);
+    pay_iou(0, upsender, 1);
     
 }
 
@@ -358,7 +358,19 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 
         up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount);
         asset excess_amount(quantity.amount % conf.one_up_amount.amount, quantity.symbol);
-        check(excess_amount.amount == 0, "⚡️ To Up, send exactly or a multiple of "+  conf.one_up_amount.to_string());
+        //check(excess_amount.amount == 0, "⚡️ To Up, send exactly or a multiple of "+  conf.one_up_amount.to_string());
+
+
+        // Refund the excess amount if it's greater than zero
+        if (excess_amount.amount > 0) {
+            string refund_memo = "⟁ Refund of Up tokens, save CPU by sending a multiple of "+ conf.one_up_amount.to_string();
+            action(
+                permission_level{get_self(), "active"_n},
+                conf.up_token_contract,
+                "transfer"_n,
+                std::make_tuple(get_self(), from, excess_amount, refund_memo)
+            ).send();
+        }
 
         check(up_quantity >= 1, "⚡️ Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
 
@@ -423,18 +435,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             check(0, "⚡️ Unknown memo, Up with: up|<contentid>, upurl|<link>, upnft|<collection>|<templateid>, or register content with addurl|<url>, addnft|<collection>|<templateid>");
         }
 
-        /*/ Refund the excess amount if it's greater than zero
-        if (excess_amount.amount > 0) {
-            string refund_memo = "⟁ Refund of Up tokens, to avoid refunds send a multiple of "+ conf.one_up_amount.to_string();
-            action(
-                permission_level{get_self(), "active"_n},
-                conf.up_token_contract,
-                "transfer"_n,
-                std::make_tuple(get_self(), from, excess_amount, refund_memo)
-            ).send();
-        }
-        /*/
-
+        
     }
   
 } // END token transfer listener

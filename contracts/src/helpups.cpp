@@ -227,8 +227,8 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   // --- Calculate Payments --- //
   uint32_t paid = 0;
   std::vector<uint64_t> ious_to_erase;
-
   uint32_t records_processed = 0;
+
   // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
   while(iou_itr != _ious.end() && records_processed <= maxpayments){
     paid += iou_itr->upscount; 
