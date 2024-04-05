@@ -1,10 +1,10 @@
 {
   "name": "Ups",
   "version": "1.0.0",
-  "description": "Localized curation contract for Antelope blockchains",
+  "description": "Rank the Web + Atomic Asset NFTs. Localized curation contract for Antelope blockchains",
   "main": "ups.hpp",
   "contributors": [{
-    "name": "Douglas Butner",
+    "name": "Douglas James Butner",
     "email": "douglas@cxc.world",
   }],
   "license": "MIT",
