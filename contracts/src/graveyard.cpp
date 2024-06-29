@@ -176,5 +176,6 @@ Find the top content in each area by indexes provided.
 /*/
 
 
-
+// You may take control of this version of the testnet contract if you like to test features to see if the changes are breaking. 
+// If you can use it, the table structures re the same, implying compatibility
 {"msg": "succeeded", "keys": {"active_key": {"public": "EOS5cdMeqUkXyTfqpiLhDTfZyGx1VuRuLFdGozJDr2d2L9r3iw1i6", "private": "5KiDctDdD2uTqtbKq3NcpDvBnW8oHTxFmGLckk7v3gxt5MhDuy6"}, "owner_key": {"public": "EOS5Yk4FQChWb21RhGdDyvZ43hnbEGJW9VwqjyzK8Wvw1RSu5ckhF", "private": "5JJ6kk6Sappoqd4CpKGzXUqhDcqQRqZ8NVHYsbFXXVg5FepaQRk"}}, "account": "upsupsupsup4"}

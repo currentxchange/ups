@@ -423,7 +423,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
                 upsertup_nft(up_quantity, from, collection, templateid);
 
                 return;
-            } else if (memo_man == "addurl" ||memo_man == "addlink" ) {
+            } else if (memo_man == "addurl" || memo_man == "addlink" ) {
                 ups::addcontent(from, 0.0, 0.0, 0, 0, "", "", 0, 0, parameter, ""_n, ""_n, 0);
                 return;
             } else {
@@ -439,5 +439,3 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
     }
   
 } // END token transfer listener
-
-
