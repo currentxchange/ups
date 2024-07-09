@@ -8,7 +8,7 @@ ACTION ups::payup(name upsender = ""_n) {
     /*/
 
     //check((has_auth(upsender) || has_auth(get_self())) , "Please put your account name.");
-
+cd
     // --- Send to the payment dispatcher --- //
     pay_iou(0, upsender, 1);
     

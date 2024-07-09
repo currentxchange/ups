@@ -4,14 +4,11 @@
 #include <atomicassets-interface.hpp>
 #include <ups-web4.hpp>
 
-#include <cctype> //LASTCHECK Needed?
 
+/*/ --- Why all these Indexes? ---//
 
-/*/ --- Why all these Indexes? --- //LASTCHECK write indexes here
+You'll find that this contract has far too many indexes for most use cases.
 
-You'll find that this contract has far too many indeces for most use cases.
-
-Including indexes allows cXc to do interesting things with ship nodes, like calculating top charts and paying people.  
 If you don't plan to use them, consider deleting the indexes that are not used by the contract. 
 
 /*/
@@ -40,6 +37,7 @@ typedef singleton<name("contentprov"), content_provider> content_provider_single
   The user can input a text based representation of location, while tables always store an integer-based location.
 
   Storing integers improves performance and allows indexing, but does decrease the human-readability of the tables. 
+  
 
   --- Data Sanity Checks ---
 
