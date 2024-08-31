@@ -17,9 +17,9 @@ Use Ups to run your own web3 reddit, with communities based around NFT collectio
 
 **What is a `subreddit` here?**
 
-To continue the Reddit analogy, the Ups contract uses `domain`s like a subreddit, except a domain can only be a domain name (like youtube.com) or a colleciton name (like cxcmusicnfts).
+To continue the Reddit analogy, the Ups contract uses `domain`s like a subreddit, except a domain can only be a domain name (like youtube.com) or a collection name (like cxcmusicnfts).
 
-**What is a post** 
+**What is a post?** 
 
 A 'post' on Reddit is like `content` on Ups. Content can either be a specific URL on a domain, like youtube.com/?v=yourvidzz14, or a template in a collection, like 655780 in collection cxcmusicnfts. 
 
@@ -33,11 +33,13 @@ Ups creates a gamified economy that benefits all participants.
 Let your collectors rank their favorite NFTs. 
 
 Create demand by:
-- Holding upvote competetions for rewards
+- Holding upvote competitions for rewards
 For example, you could say the top-upped NFT collection this week gets an extra reward for all who hold the template that wins. This creates incentives for collectors that hold more of one template to upvote it. 
 
 - Distribute Reward Tokens 
-Use this contract to slow-release your project token in a way that's more engaging that a simple airdrop. *note: the Loot contract to reward your users for staking NFTs in your collection. 
+Use this contract to slow-release your project token in a way that's more engaging than a simple airdrop. 
+
+*NFTs Please: Check out cXc's [Loot contract](https://github.com/currentxchange/loot) to reward your users for staking NFTs from your collection. 
 
 
 
@@ -48,7 +50,7 @@ Earn tokens for curating content.
 Submitting content gives you rewards each time the content is upvoted. 
 
 - Upvote content + earn 1:1 
-Every upvote you send will earn you 1 reward. The reward token can be different than the upvore token, or the same token with a different amount.
+Every upvote you send will earn you 1 reward. The reward token can be different than the upvote token, or the same token with a different amount.
 
 
 # Benefits for token project owners
@@ -83,7 +85,7 @@ Key Concepts:
 
 Step 1: Manage your content and rewards configuration with the `setconfig` action to define reward parameters and token settings. 
 
-Step 2: Register your domain using steps described in following section, or NFT collection by calling the `regnftcol` action directly. 
+Step 2: Register your domain using the steps described in following section, or NFT collection by calling the `regnftcol` action directly. 
 
 
 
@@ -114,7 +116,7 @@ This system was originally designed to have one upvote token given to users per 
 This is one of the first implementations of the web4 concept of time units, based on the [Web4 Manifesto](https://github.com/dougbutner/web-4) written by the contract's author. 
 
 # 🌎 For the world 🤩
-Content can (optionally) be assigned a location with, with four levels provided. Included: Continent Subregions (M49), Country (ISO 3166 alpha-3), subdivision aka state, and postal code. Contract only verifies continent subregions and countrys, and allows for passing the three-digit code (like USA) as a string from the user's perspective. 
+Content can (optionally) be assigned a location, with four levels provided. Included: Continent Subregions (M49), Country (ISO 3166 alpha-3), subdivision aka state, and postal code. Contract only verifies continent subregions and countries, and allows for passing the three-digit code (like USA) as a string from the user's perspective. 
 
 This means you can hold competitions for the best content in North America, Brazil, etc.  
 
@@ -168,10 +170,27 @@ The contract itself can also call this action, so the owner could create an orac
 ### 🛠 Configuration 
 The reward system is defined by the `setconfig` action, which sets parameters like the reward token contract, amount per upvote, and any multipliers. If you're using the waxblocks interface, you must type out `true` for the `pay_upsender` and `pay_submitter` options, as setting the value to `1` will not be recognized and `0` will be stored in the table, resulting in nobody getting paid (records won't be stored in the ious table). 
 
-# ⚠️ Contract Status 
-Contract is currently deployed on testnet with testing ongoing. We are still improving the contract. No audit has been performed. Please do not use Ups contract unless on testnet until release 1.0.0 is posted, indicating contract is ready. 
+Note: You are able to change the timeunit amount ONLY before the first upvote is made.
 
-Please open any issues you encounter using this contract on testnet. 
+```
+// --- Use this as a reference for the format needed --- //
+
+up_token_contract: eosio.token
+up_token_symbol: 8,WAX
+reward_token_contract: eosio.token
+reward_token_symbol: 8,WAX
+one_up_amount: 0.00000002 WAX
+one_reward_amount: 0.00000001 WAX
+pay_submitter: true
+pay_upsender: true
+reward_multiplier_percent: 100
+timeunit: 100
+```
+
+# ⚠️ Contract Status 
+Contract is currently released, unaudited, with live testing ongoing. We are still improving the contract. No audit has been performed or is planned. For the latest, do not use the release, instead clone + compile the contract. 
+
+Please open issues surrounding any problems you encounter via Github. 
 
 Clone this repo instead of the release for the latest version. 
 
@@ -179,4 +198,4 @@ Ups on WAX testnet ⚗️
 [testnet.waxblock.io/account/upsupsupsup4](https://testnet.waxblock.io/account/upsupsupsup4)
 
 ## 🧑‍⚖️ Liability waiver
-This contract and its functionalities are "AS IS" without warranty of any kind. Always carefully check and compile the latest version of the code on your local environment. Understand the code and it's economic implications before implementing. We (any party involved) are not responsible for any losses or damages that may result in use of our tools including this. We do not offer support outside of Github issues and our [discord](https://discord.com/invite/u3kpj7xEWZ). Users should exercise caution and perform all due diligence when deploying interacting with smart contracts on the blockchain.
+This contract and its functionalities are "AS IS" without warranty of any kind. Always carefully check and compile the latest version of the code on your local environment. Understand the code and its economic implications before implementing. We (any party involved) are not responsible for any losses or damages that may result in use of our tools including this. We do not offer support outside of Github issues and our [discord](https://discord.com/invite/u3kpj7xEWZ). Users should exercise caution and perform all due diligence when deploying interacting with smart contracts on the blockchain.
