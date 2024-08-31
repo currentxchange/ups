@@ -352,7 +352,17 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         // --- Checks + Set up Variables --- //
         config conf = check_config();
         check(!conf.paused_ups, "⚡️ Ups are currently paused.");
+        // --- Check if this is a deposit (reward token) --- //
+        if (memo == "deposit" ){
+
+            check(quantity.symbol == conf.reward_token_symbol, "⚡️ This isn't the correct Reward token. Send "+  conf.one_reward_amount.to_string());
+
+            return;
+
+        } else {
         check(get_first_receiver() == conf.up_token_contract, "⚡️ This isn't the correct Up token. Send "+  conf.one_up_amount.to_string());
+        }
+
         uint64_t up_quantity; 
 
 

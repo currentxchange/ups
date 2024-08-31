@@ -187,6 +187,8 @@ reward_multiplier_percent: 100
 timeunit: 100
 ```
 
+Once you have set up the contract, fund it by transferring the reward tokens to the contract with the memo `deposit`. The contract will refuse any transfers of non-upvote tokens, and also of reward tokens without the memo `deposit`.
+
 # ⚠️ Contract Status 
 Contract is currently released, unaudited, with live testing ongoing. We are still improving the contract. No audit has been performed or is planned. For the latest, do not use the release, instead clone + compile the contract. 
 
