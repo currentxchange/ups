@@ -229,12 +229,63 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
   std::vector<uint64_t> ious_to_erase;
   uint32_t records_processed = 0;
 
-  // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
+  /*/ --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
   while(iou_itr != _ious.end() && records_processed <= maxpayments){
     paid += iou_itr->upscount; 
     ious_to_erase.push_back(iou_itr->contentid); // Track IOU IDs for deletion
     iou_itr++;
-  }
+  }//ENd while less than maxpayments
+
+/*/
+void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem = true) {
+    check(receiver != ""_n, "⚡️ We can't pay no one.");
+
+    // --- Check that the rewards aren't paused --- //
+    config conf = check_config();
+    check(!conf.paused_rewards, "⚡️ Rewards are currently paused. Check back later.");
+
+    // --- Get the IOUs --- //
+    ups::ious_t _ious(get_self(), receiver.value); 
+    auto iou_itr = _ious.begin();
+    check(iou_itr != _ious.end(), "⚡️ " + receiver.to_string() + " is all paid up. Send some Ups and come back ☀️");
+
+    uint32_t paid = 0;
+    std::vector<uint64_t> ious_to_erase;
+    uint32_t records_processed = 0;
+    asset total_payment;
+
+    content_t _content(get_self(), get_self().value);
+
+    // --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
+    while(iou_itr != _ious.end() && records_processed <= maxpayments) {
+        uint64_t contentid = iou_itr->contentid;
+
+        // --- Fetch content to check the domain --- //
+        auto content_itr = _content.find(contentid);
+
+        // --- Delete IOUS without pay if the content has been deleted --- //
+        if (content_itr == _content.end()) {
+            ious_to_erase.push_back(iou_itr->contentid);
+            iou_itr++;
+            records_processed++;
+            continue;
+        }
+
+        name domain = content_itr->domain;
+        uint32_t upscount = iou_itr->upscount;
+
+        if (domain == "music.cxc.wo"_n) {
+            // --- Send MUSIC token from cxc for this domain --- //
+            total_payment += asset(upscount * conf.one_reward_amount.amount, symbol("MUSIC", 0));
+        } else {
+            // --- Use the default reward token configured in the contract  --- //
+            total_payment += asset(upscount * conf.one_reward_amount.amount * (conf.reward_multiplier_percent / 100), conf.reward_token_symbol);
+        }
+        // --- Delete paid IOUs from the table --- //
+        ious_to_erase.push_back(iou_itr->contentid); 
+        iou_itr++;
+        records_processed++;
+    }
 
     // --- Calculate the total reward amount --- //
     asset total_payment = conf.one_reward_amount;

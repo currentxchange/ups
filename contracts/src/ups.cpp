@@ -360,7 +360,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
             return;
 
         } else {
-        check(get_first_receiver() == conf.up_token_contract, "⚡️ This isn't the correct Up token. Send "+  conf.one_up_amount.to_string());
+        check(get_first_receiver() == conf.up_token_contract || get_first_receiver() == "cxc"_n, "⚡️ This isn't the correct Up token. Send "+  conf.one_up_amount.to_string() + "or any cxc token");
         }
 
         uint64_t up_quantity; 
