@@ -211,32 +211,6 @@ void ups::upsert_ious(uint32_t upscount, name upsender, uint64_t contentid, bool
 
 
 // --- Send the beautiful people their tokens  --- //
-void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem = true){
-
-  check(receiver != ""_n, "⚡️ We can't pay no one.");
-
-  // --- Check that the rewards aren't paused --- //
-  config conf = check_config();
-  check(!conf.paused_rewards, "⚡️ Rewards are currently paused. Check back later.");
-
-  // --- Get the IOUs --- //
-  ups::ious_t _ious(get_self(), receiver.value); 
-  auto iou_itr = _ious.begin();
-  check(iou_itr != _ious.end(), "⚡️ " + receiver.to_string() + " is all paid up. Send some Ups and come back ☀️");
-  
-  // --- Calculate Payments --- //
-  uint32_t paid = 0;
-  std::vector<uint64_t> ious_to_erase;
-  uint32_t records_processed = 0;
-
-  /*/ --- Iterate over the IOUs and accumulate payments until reaching maxpay or end of table --- //
-  while(iou_itr != _ious.end() && records_processed <= maxpayments){
-    paid += iou_itr->upscount; 
-    ious_to_erase.push_back(iou_itr->contentid); // Track IOU IDs for deletion
-    iou_itr++;
-  }//ENd while less than maxpayments
-
-/*/
 void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem = true) {
     check(receiver != ""_n, "⚡️ We can't pay no one.");
 
@@ -285,13 +259,13 @@ void ups::pay_iou(uint32_t maxpayments = 19, name receiver = ""_n, bool paythem 
         ious_to_erase.push_back(iou_itr->contentid); 
         iou_itr++;
         records_processed++;
-    }
+    }//END while
 
     // --- Calculate the total reward amount --- //
-    asset total_payment = conf.one_reward_amount;
+    total_payment = conf.one_reward_amount;
     total_payment *= paid * (conf.reward_multiplier_percent / 100);
 
-      // --- Erase paid IOUs from the table --- //
+  // --- Erase paid IOUs from the table --- //
   for(auto& snipecontentid: ious_to_erase){
     auto itr = _ious.find(snipecontentid);
     if(itr != _ious.end()){

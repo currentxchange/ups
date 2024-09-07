@@ -354,13 +354,10 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
         check(!conf.paused_ups, "⚡️ Ups are currently paused.");
         // --- Check if this is a deposit (reward token) --- //
         if (memo == "deposit" ){
-
             check(quantity.symbol == conf.reward_token_symbol, "⚡️ This isn't the correct Reward token. Send "+  conf.one_reward_amount.to_string());
-
             return;
-
         } else {
-        check(get_first_receiver() == conf.up_token_contract || get_first_receiver() == "cxc"_n, "⚡️ This isn't the correct Up token. Send "+  conf.one_up_amount.to_string() + "or any cxc token");
+            check(get_first_receiver() == conf.up_token_contract || get_first_receiver() == "bluxbluxblux"_n, "⚡️ This isn't the correct Up token. Send "+  conf.one_up_amount.to_string() +"or any cxc token.");
         }
 
         uint64_t up_quantity; 
@@ -392,7 +389,6 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
                 stripped_memo += c;
             }
         }
-
 
         // --- Check for '|' in memo --- //
         size_t delimiter_pos = stripped_memo.find('|');
