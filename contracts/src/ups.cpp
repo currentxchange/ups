@@ -368,10 +368,10 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
 
         up_quantity = static_cast<uint32_t>(quantity.amount / conf.one_up_amount.amount);
         asset excess_amount(quantity.amount % conf.one_up_amount.amount, quantity.symbol);
-        //check(excess_amount.amount == 0, "⚡️ To Up, send exactly or a multiple of "+  conf.one_up_amount.to_string());
+        check(excess_amount.amount == 0, "⚡️ To Up, send exactly or a multiple of "+  conf.one_up_amount.to_string());
 
 
-        // Refund the excess amount if it's greater than zero
+        /*/ Refund the excess amount if it's greater than zero
         if (excess_amount.amount > 0) {
             string refund_memo = "⟁ Refund of Up tokens, save CPU by sending a multiple of "+ conf.one_up_amount.to_string();
             action(
@@ -381,6 +381,7 @@ ACTION ups::setconfig(name up_token_contract, symbol up_token_symbol, name rewar
                 std::make_tuple(get_self(), from, excess_amount, refund_memo)
             ).send();
         }
+        /*/
 
         check(up_quantity >= 1, "⚡️ Your Up was too small. Send at least "+  conf.one_up_amount.to_string());
 
